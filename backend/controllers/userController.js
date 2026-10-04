@@ -78,9 +78,57 @@ const loginUser = async (req, res) => {
     });
 };
 
+const createStylistUser = async (req, res) => {
 
+    try {
+
+        const {
+            name,
+            email,
+            password,
+            phone,
+            gender,
+            dateOfBirth
+        } = req.body;
+
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            return res.status(400).json({
+                message: "Email already registered"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newStylist = new User({
+            name,
+            email,
+            password: hashedPassword,
+            phone,
+            gender,
+            dateOfBirth,
+            role: "stylist"
+        });
+
+        await newStylist.save();
+
+        return res.status(201).json({
+            message: "Stylist user created successfully",
+            userId: newStylist._id
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            message: "Stylist user creation failed",
+            error: error.message
+        });
+
+    }
+};
 
 
 module.exports = {
-    registerUser, loginUser
+    registerUser, loginUser, createStylistUser
 };
