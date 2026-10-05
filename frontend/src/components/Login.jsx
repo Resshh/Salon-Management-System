@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -20,8 +23,13 @@ function Login() {
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("role", response.data.role);
 
-            console.log("Login successful");
-            console.log("Role:", response.data.role);
+            if (response.data.role === "customer") {
+                navigate("/customer");
+            } else if (response.data.role === "stylist") {
+                navigate("/stylist");
+            } else if (response.data.role === "admin") {
+                navigate("/admin");
+            }
 
         } catch (error) {
             console.log(
@@ -31,28 +39,82 @@ function Login() {
     };
 
     return (
-        <div>
-            <h1>Salon Login</h1>
+        <div className="login-page">
 
-            <form onSubmit={handleLogin}>
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+            <div className="login-left">
+                <div className="brand">
+                    <h1>BEAUTÉ</h1>
+                    <p>Beauty. Style. You.</p>
+                </div>
 
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="login-content">
+                    <p className="small-heading">
+                        WHERE BEAUTY FEELS LIKE YOU
+                    </p>
 
-                <button type="submit">
-                    Login
-                </button>
-            </form>
+                    <h2>
+                        Confidence
+                        <br />
+                        Looks Good
+                        <br />
+                        <span>On You.</span>
+                    </h2>
+
+                    <p className="description">
+                        Personalized salon experiences
+                        <br />
+                        for every version of you.
+                    </p>
+                </div>
+            </div>
+
+            <div className="login-right">
+
+                <div className="login-box">
+
+                    <h2>Welcome Back</h2>
+
+                    <p className="login-subtitle">
+                        Sign in to your BEAUTÉ account
+                    </p>
+
+                    <form onSubmit={handleLogin}>
+
+                        <label>Email</label>
+
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            required
+                        />
+
+                        <label>Password</label>
+
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter your password"
+                            required
+                        />
+
+                        <button type="submit">
+                            LOGIN
+                        </button>
+
+                    </form>
+
+                    <p className="register-text">
+                        Don't have an account?
+                        <span> Register</span>
+                    </p>
+
+                </div>
+
+            </div>
+
         </div>
     );
 }
