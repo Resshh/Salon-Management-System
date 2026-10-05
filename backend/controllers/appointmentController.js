@@ -1,3 +1,4 @@
+const Notification = require("../models/notificationModel");
 const Appointment = require("../models/appointmentModel");
 const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
@@ -12,7 +13,11 @@ const createAppointment = async (req, res) => {
             startTime,
             endTime
         } = req.body;
-
+        if (startTime >= endTime) {
+            return res.status(400).json({
+                message: "End time must be after start time"
+            });
+        }
         // Customer comes from logged-in user's JWT
         const customer = req.user.userId;
 
@@ -77,6 +82,17 @@ const createAppointment = async (req, res) => {
 
         await newAppointment.save();
 
+        // Create notification for stylist
+        const stylistUser = await Stylist.findById(stylist);
+
+        const notification = new Notification({
+            recipient: stylistUser.user,
+            message: "You have received a new appointment request",
+            type: "booking"
+        });
+
+        await notification.save();
+
         return res.status(201).json({
             message: "Appointment booked successfully",
             appointmentId: newAppointment._id
@@ -89,6 +105,8 @@ const createAppointment = async (req, res) => {
         });
     }
 };
+
+
 
 const approveAppointment = async (req, res) => {
     try {
