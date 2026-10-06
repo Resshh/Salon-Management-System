@@ -1,7 +1,7 @@
 import StylistProfile from "./StylistProfile";
 import StylistAppointments from "./StylistAppointments";
 import StylistSchedule from "./StylistSchedule";
-import StylistNotifications from "./StylistNotifications";
+import StylistNotification from "./StylistNotifications";
 
 function StylistDashboard() {
 
@@ -112,7 +112,7 @@ function StylistDashboard() {
 
             {/* ================= NOTIFICATIONS ================= */}
 
-            <StylistNotifications />
+            <StylistNotification />
 
         </div>
     );
