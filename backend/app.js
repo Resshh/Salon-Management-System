@@ -13,8 +13,6 @@ const stylistRoutes = require("./routes/stylistRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes")
 const feedbackRoutes = require("./routes/feedbackRoutes");
-const historyRoutes = require("./routes/historyRoutes");
-
 
 
 const db = require('./connection');
@@ -32,8 +30,6 @@ app.use("/api/stylist", stylistRoutes);
 app.use("/api/appointment", appointmentRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
-app.use("/api/history", historyRoutes);
-
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

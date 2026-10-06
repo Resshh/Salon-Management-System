@@ -15,18 +15,6 @@ const feedbackSchema = new mongoose.Schema(
             unique: true
         },
 
-        stylist: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Stylist",
-            required: true
-        },
-
-        service: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Service",
-            required: true
-        },
-
         rating: {
             type: Number,
             required: true,
@@ -34,15 +22,12 @@ const feedbackSchema = new mongoose.Schema(
             max: 5
         },
 
-        comment: {
+        review: {
             type: String,
-            trim: true,
-            default: ""
+            trim: true
         }
     },
-    {
-        timestamps: true
-    }
+    { timestamps: true }
 );
 
 const Feedback = mongoose.model("Feedback", feedbackSchema);

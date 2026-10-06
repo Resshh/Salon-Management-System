@@ -5,7 +5,7 @@ const router = express.Router();
 const {
     getCustomerHistory,
     getCustomerHistoryForStylist
-} = require("../controllers/historyController");
+} = require("../controllers/serviceHistoryController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
