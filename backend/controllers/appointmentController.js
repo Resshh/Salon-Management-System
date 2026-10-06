@@ -1,12 +1,82 @@
 const Appointment = require("../models/appointmentModel");
-
 const User = require("../models/userModel");
-
 const Stylist = require("../models/stylistModel");
-
 const Service = require("../models/serviceModel");
+const Notification = require("../models/notificationModel");
 
-const { sendNotification } = require("../utils/notificationUtils");
+const sendEmail = require("../utils/emailService");
+
+
+// ======================================================
+// SEND IN-APP NOTIFICATION + EMAIL
+// ======================================================
+
+const sendNotification = async ({
+    recipient,
+    title,
+    message,
+    type,
+    emailSubject,
+    emailText
+}) => {
+
+    // -------------------------------
+    // IN-APP NOTIFICATION
+    // -------------------------------
+
+    try {
+
+        await Notification.create({
+            recipient,
+            title,
+            message,
+            type
+        });
+
+    } catch (error) {
+
+        console.error(
+            "In-app notification failed:",
+            error.message
+        );
+
+    }
+
+
+    // -------------------------------
+    // EMAIL NOTIFICATION
+    // -------------------------------
+
+    try {
+
+        const user = await User.findById(recipient)
+            .select("email");
+
+        if (
+            user &&
+            user.email &&
+            emailSubject &&
+            emailText
+        ) {
+
+            await sendEmail(
+                user.email,
+                emailSubject,
+                emailText
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Email notification failed:",
+            error.message
+        );
+
+    }
+
+};
 
 
 // ======================================================
@@ -20,7 +90,8 @@ const isWithinWorkingSchedule = (
     endTime
 ) => {
 
-    const appointmentDate = new Date(`${date}T00:00:00`);
+    const appointmentDate =
+        new Date(`${date}T00:00:00`);
 
     const dayNames = [
         "Sunday",
@@ -35,11 +106,12 @@ const isWithinWorkingSchedule = (
     const appointmentDay =
         dayNames[appointmentDate.getDay()];
 
-    const schedule = stylist.workingSchedule.find(
-        (item) =>
-            item.day.toLowerCase() ===
-            appointmentDay.toLowerCase()
-    );
+    const schedule =
+        stylist.workingSchedule.find(
+            (item) =>
+                item.day.toLowerCase() ===
+                appointmentDay.toLowerCase()
+        );
 
     if (!schedule) {
 
@@ -48,6 +120,7 @@ const isWithinWorkingSchedule = (
             message:
                 `Stylist is not available on ${appointmentDay}`
         };
+
     }
 
     if (startTime < schedule.startTime) {
@@ -57,6 +130,7 @@ const isWithinWorkingSchedule = (
             message:
                 `Stylist starts working at ${schedule.startTime} on ${appointmentDay}`
         };
+
     }
 
     if (endTime > schedule.endTime) {
@@ -66,11 +140,13 @@ const isWithinWorkingSchedule = (
             message:
                 `Stylist finishes working at ${schedule.endTime} on ${appointmentDay}`
         };
+
     }
 
     return {
         valid: true
     };
+
 };
 
 
@@ -91,12 +167,19 @@ const createAppointment = async (req, res) => {
         } = req.body;
 
 
-        if (!stylist || !service || !date || !startTime || !endTime) {
+        if (
+            !stylist ||
+            !service ||
+            !date ||
+            !startTime ||
+            !endTime
+        ) {
 
             return res.status(400).json({
                 message:
                     "Stylist, service, date, start time and end time are required"
             });
+
         }
 
 
@@ -106,15 +189,20 @@ const createAppointment = async (req, res) => {
                 message:
                     "End time must be after start time"
             });
+
         }
 
 
-        const customer = req.user.userId;
+        const customer =
+            req.user.userId;
 
+
+        // ------------------------------------------
+        // CHECK CUSTOMER
+        // ------------------------------------------
 
         const existingCustomer =
             await User.findById(customer);
-
 
         if (!existingCustomer) {
 
@@ -122,12 +210,16 @@ const createAppointment = async (req, res) => {
                 message:
                     "Customer not found"
             });
+
         }
 
 
+        // ------------------------------------------
+        // CHECK STYLIST
+        // ------------------------------------------
+
         const existingStylist =
             await Stylist.findById(stylist);
-
 
         if (!existingStylist) {
 
@@ -135,12 +227,16 @@ const createAppointment = async (req, res) => {
                 message:
                     "Stylist not found"
             });
+
         }
 
 
+        // ------------------------------------------
+        // CHECK SERVICE
+        // ------------------------------------------
+
         const existingService =
             await Service.findById(service);
-
 
         if (!existingService) {
 
@@ -148,12 +244,13 @@ const createAppointment = async (req, res) => {
                 message:
                     "Service not found"
             });
+
         }
 
 
-        // ==================================================
-        // CHECK WHETHER STYLIST PROVIDES SERVICE
-        // ==================================================
+        // ------------------------------------------
+        // CHECK STYLIST PROVIDES SERVICE
+        // ------------------------------------------
 
         const providesService =
             existingStylist.services.some(
@@ -162,19 +259,19 @@ const createAppointment = async (req, res) => {
                     service.toString()
             );
 
-
         if (!providesService) {
 
             return res.status(400).json({
                 message:
                     "Selected stylist does not provide this service"
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // CHECK WORKING SCHEDULE
-        // ==================================================
+        // ------------------------------------------
 
         const scheduleCheck =
             isWithinWorkingSchedule(
@@ -184,19 +281,19 @@ const createAppointment = async (req, res) => {
                 endTime
             );
 
-
         if (!scheduleCheck.valid) {
 
             return res.status(400).json({
                 message:
                     scheduleCheck.message
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // CHECK OVERLAPPING APPOINTMENT
-        // ==================================================
+        // ------------------------------------------
 
         const existingAppointment =
             await Appointment.findOne({
@@ -229,12 +326,13 @@ const createAppointment = async (req, res) => {
                 message:
                     "Stylist is already booked for this time"
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // CREATE APPOINTMENT
-        // ==================================================
+        // ------------------------------------------
 
         const newAppointment =
             new Appointment({
@@ -259,9 +357,9 @@ const createAppointment = async (req, res) => {
         await newAppointment.save();
 
 
-        // ==================================================
-        // NOTIFICATION TO STYLIST
-        // ==================================================
+        // ------------------------------------------
+        // NOTIFY STYLIST
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -281,31 +379,14 @@ const createAppointment = async (req, res) => {
                 "New Appointment Request - Beauté Salon",
 
             emailText:
-                `You have received a new appointment request for ${date} at ${startTime}.`,
+                `You have received a new appointment request for ${date} at ${startTime} - ${endTime}.`
 
-            emailHtml:
-                `
-                <h2>New Appointment Request</h2>
-
-                <p>
-                    You have received a new appointment request.
-                </p>
-
-                <p>
-                    <strong>Date:</strong> ${date}<br>
-                    <strong>Time:</strong> ${startTime} - ${endTime}
-                </p>
-
-                <p>
-                    Please log in to view and manage the appointment.
-                </p>
-                `
         });
 
 
-        // ==================================================
-        // NOTIFICATION TO CUSTOMER
-        // ==================================================
+        // ------------------------------------------
+        // NOTIFY CUSTOMER
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -325,26 +406,8 @@ const createAppointment = async (req, res) => {
                 "Appointment Request Submitted - Beauté Salon",
 
             emailText:
-                `Your appointment request for ${date} at ${startTime} has been submitted successfully.`,
+                `Your appointment request for ${date} at ${startTime} - ${endTime} has been submitted successfully. You will receive another notification when the stylist approves or rejects your appointment.`
 
-            emailHtml:
-                `
-                <h2>Appointment Request Submitted</h2>
-
-                <p>
-                    Your appointment request has been submitted successfully.
-                </p>
-
-                <p>
-                    <strong>Date:</strong> ${date}<br>
-                    <strong>Time:</strong> ${startTime} - ${endTime}
-                </p>
-
-                <p>
-                    You will receive another notification when
-                    the stylist approves or rejects your appointment.
-                </p>
-                `
         });
 
 
@@ -358,7 +421,10 @@ const createAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -369,7 +435,9 @@ const createAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -393,13 +461,13 @@ const approveAppointment = async (req, res) => {
                 user: userId
             });
 
-
         if (!stylist) {
 
             return res.status(404).json({
                 message:
                     "Stylist profile not found"
             });
+
         }
 
 
@@ -408,13 +476,13 @@ const approveAppointment = async (req, res) => {
                 appointmentId
             );
 
-
         if (!appointment) {
 
             return res.status(404).json({
                 message:
                     "Appointment not found"
             });
+
         }
 
 
@@ -427,6 +495,7 @@ const approveAppointment = async (req, res) => {
                 message:
                     "You are not assigned to this appointment"
             });
+
         }
 
 
@@ -436,6 +505,7 @@ const approveAppointment = async (req, res) => {
                 message:
                     "Only pending appointments can be approved"
             });
+
         }
 
 
@@ -445,9 +515,9 @@ const approveAppointment = async (req, res) => {
         await appointment.save();
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY CUSTOMER
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -467,25 +537,8 @@ const approveAppointment = async (req, res) => {
                 "Your Appointment Has Been Approved - Beauté Salon",
 
             emailText:
-                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved.`,
+                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved. We look forward to seeing you at Beauté Salon.`
 
-            emailHtml:
-                `
-                <h2>Appointment Approved</h2>
-
-                <p>
-                    Your salon appointment has been approved.
-                </p>
-
-                <p>
-                    <strong>Date:</strong> ${appointment.date}<br>
-                    <strong>Time:</strong> ${appointment.startTime} - ${appointment.endTime}
-                </p>
-
-                <p>
-                    We look forward to seeing you.
-                </p>
-                `
         });
 
 
@@ -496,7 +549,10 @@ const approveAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -507,7 +563,9 @@ const approveAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -531,13 +589,13 @@ const rejectAppointment = async (req, res) => {
                 user: userId
             });
 
-
         if (!stylist) {
 
             return res.status(404).json({
                 message:
                     "Stylist profile not found"
             });
+
         }
 
 
@@ -546,13 +604,13 @@ const rejectAppointment = async (req, res) => {
                 appointmentId
             );
 
-
         if (!appointment) {
 
             return res.status(404).json({
                 message:
                     "Appointment not found"
             });
+
         }
 
 
@@ -565,6 +623,7 @@ const rejectAppointment = async (req, res) => {
                 message:
                     "You are not assigned to this appointment"
             });
+
         }
 
 
@@ -574,6 +633,7 @@ const rejectAppointment = async (req, res) => {
                 message:
                     "Only pending appointments can be rejected"
             });
+
         }
 
 
@@ -583,9 +643,9 @@ const rejectAppointment = async (req, res) => {
         await appointment.save();
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY CUSTOMER
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -605,22 +665,8 @@ const rejectAppointment = async (req, res) => {
                 "Appointment Request Rejected - Beauté Salon",
 
             emailText:
-                "Unfortunately, your salon appointment request has been rejected by the stylist.",
+                "Unfortunately, your salon appointment request has been rejected by the stylist. Please log in to choose another available appointment slot."
 
-            emailHtml:
-                `
-                <h2>Appointment Request Rejected</h2>
-
-                <p>
-                    Unfortunately, your salon appointment request
-                    has been rejected by the stylist.
-                </p>
-
-                <p>
-                    Please log in to choose another available
-                    appointment slot.
-                </p>
-                `
         });
 
 
@@ -631,7 +677,10 @@ const rejectAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -642,7 +691,9 @@ const rejectAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -689,7 +740,10 @@ const getMyAppointments = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -700,7 +754,9 @@ const getMyAppointments = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -721,13 +777,13 @@ const getStylistAppointments = async (req, res) => {
                 user: userId
             });
 
-
         if (!stylist) {
 
             return res.status(404).json({
                 message:
                     "Stylist profile not found"
             });
+
         }
 
 
@@ -761,7 +817,10 @@ const getStylistAppointments = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -772,7 +831,9 @@ const getStylistAppointments = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -796,13 +857,13 @@ const cancelAppointment = async (req, res) => {
                 appointmentId
             );
 
-
         if (!appointment) {
 
             return res.status(404).json({
                 message:
                     "Appointment not found"
             });
+
         }
 
 
@@ -815,6 +876,7 @@ const cancelAppointment = async (req, res) => {
                 message:
                     "You are not allowed to cancel this appointment"
             });
+
         }
 
 
@@ -827,6 +889,7 @@ const cancelAppointment = async (req, res) => {
                 message:
                     "This appointment cannot be cancelled"
             });
+
         }
 
 
@@ -836,9 +899,9 @@ const cancelAppointment = async (req, res) => {
         await appointment.save();
 
 
-        // ==================================================
-        // GET STYLIST
-        // ==================================================
+        // ------------------------------------------
+        // FIND STYLIST
+        // ------------------------------------------
 
         const stylist =
             await Stylist.findById(
@@ -846,9 +909,9 @@ const cancelAppointment = async (req, res) => {
             );
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY STYLIST
-        // ==================================================
+        // ------------------------------------------
 
         if (stylist) {
 
@@ -870,28 +933,16 @@ const cancelAppointment = async (req, res) => {
                     "Appointment Cancelled - Beauté Salon",
 
                 emailText:
-                    `A customer has cancelled the appointment on ${appointment.date} at ${appointment.startTime}.`,
+                    `A customer has cancelled the appointment on ${appointment.date} at ${appointment.startTime} - ${appointment.endTime}.`
 
-                emailHtml:
-                    `
-                    <h2>Appointment Cancelled</h2>
-
-                    <p>
-                        A customer has cancelled an appointment.
-                    </p>
-
-                    <p>
-                        <strong>Date:</strong> ${appointment.date}<br>
-                        <strong>Time:</strong> ${appointment.startTime} - ${appointment.endTime}
-                    </p>
-                    `
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY CUSTOMER
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -911,21 +962,8 @@ const cancelAppointment = async (req, res) => {
                 "Your Appointment Has Been Cancelled - Beauté Salon",
 
             emailText:
-                `Your appointment on ${appointment.date} at ${appointment.startTime} has been cancelled.`,
+                `Your appointment on ${appointment.date} at ${appointment.startTime} - ${appointment.endTime} has been cancelled.`
 
-            emailHtml:
-                `
-                <h2>Appointment Cancelled</h2>
-
-                <p>
-                    Your salon appointment has been cancelled.
-                </p>
-
-                <p>
-                    <strong>Date:</strong> ${appointment.date}<br>
-                    <strong>Time:</strong> ${appointment.startTime} - ${appointment.endTime}
-                </p>
-                `
         });
 
 
@@ -936,7 +974,10 @@ const cancelAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -947,7 +988,9 @@ const cancelAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -973,12 +1016,23 @@ const rescheduleAppointment = async (req, res) => {
         } = req.body;
 
 
+        if (!date || !startTime || !endTime) {
+
+            return res.status(400).json({
+                message:
+                    "Date, start time and end time are required"
+            });
+
+        }
+
+
         if (startTime >= endTime) {
 
             return res.status(400).json({
                 message:
                     "End time must be after start time"
             });
+
         }
 
 
@@ -987,13 +1041,13 @@ const rescheduleAppointment = async (req, res) => {
                 appointmentId
             );
 
-
         if (!appointment) {
 
             return res.status(404).json({
                 message:
                     "Appointment not found"
             });
+
         }
 
 
@@ -1006,6 +1060,7 @@ const rescheduleAppointment = async (req, res) => {
                 message:
                     "You are not allowed to reschedule this appointment"
             });
+
         }
 
 
@@ -1018,6 +1073,7 @@ const rescheduleAppointment = async (req, res) => {
                 message:
                     "This appointment cannot be rescheduled"
             });
+
         }
 
 
@@ -1026,19 +1082,19 @@ const rescheduleAppointment = async (req, res) => {
                 appointment.stylist
             );
 
-
         if (!stylist) {
 
             return res.status(404).json({
                 message:
                     "Stylist not found"
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // CHECK WORKING SCHEDULE
-        // ==================================================
+        // ------------------------------------------
 
         const scheduleCheck =
             isWithinWorkingSchedule(
@@ -1048,19 +1104,19 @@ const rescheduleAppointment = async (req, res) => {
                 endTime
             );
 
-
         if (!scheduleCheck.valid) {
 
             return res.status(400).json({
                 message:
                     scheduleCheck.message
             });
+
         }
 
 
-        // ==================================================
+        // ------------------------------------------
         // CHECK OVERLAP
-        // ==================================================
+        // ------------------------------------------
 
         const existingAppointment =
             await Appointment.findOne({
@@ -1100,8 +1156,13 @@ const rescheduleAppointment = async (req, res) => {
                     "Stylist is already booked for the new time"
 
             });
+
         }
 
+
+        // ------------------------------------------
+        // UPDATE APPOINTMENT
+        // ------------------------------------------
 
         appointment.date =
             date;
@@ -1112,13 +1173,12 @@ const rescheduleAppointment = async (req, res) => {
         appointment.endTime =
             endTime;
 
-
         await appointment.save();
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY STYLIST
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -1138,27 +1198,14 @@ const rescheduleAppointment = async (req, res) => {
                 "Appointment Rescheduled - Beauté Salon",
 
             emailText:
-                `A customer has rescheduled an appointment to ${date} at ${startTime}.`,
+                `A customer has rescheduled an appointment to ${date} at ${startTime} - ${endTime}.`
 
-            emailHtml:
-                `
-                <h2>Appointment Rescheduled</h2>
-
-                <p>
-                    A customer has rescheduled an appointment.
-                </p>
-
-                <p>
-                    <strong>New Date:</strong> ${date}<br>
-                    <strong>New Time:</strong> ${startTime} - ${endTime}
-                </p>
-                `
         });
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY CUSTOMER
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -1178,21 +1225,8 @@ const rescheduleAppointment = async (req, res) => {
                 "Your Appointment Has Been Rescheduled - Beauté Salon",
 
             emailText:
-                `Your appointment has been rescheduled to ${date} at ${startTime}.`,
+                `Your appointment has been rescheduled to ${date} at ${startTime} - ${endTime}.`
 
-            emailHtml:
-                `
-                <h2>Appointment Rescheduled</h2>
-
-                <p>
-                    Your appointment has been successfully rescheduled.
-                </p>
-
-                <p>
-                    <strong>New Date:</strong> ${date}<br>
-                    <strong>New Time:</strong> ${startTime} - ${endTime}
-                </p>
-                `
         });
 
 
@@ -1203,7 +1237,10 @@ const rescheduleAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -1214,7 +1251,9 @@ const rescheduleAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -1238,13 +1277,13 @@ const completeAppointment = async (req, res) => {
                 user: userId
             });
 
-
         if (!stylist) {
 
             return res.status(404).json({
                 message:
                     "Stylist profile not found"
             });
+
         }
 
 
@@ -1253,13 +1292,13 @@ const completeAppointment = async (req, res) => {
                 appointmentId
             );
 
-
         if (!appointment) {
 
             return res.status(404).json({
                 message:
                     "Appointment not found"
             });
+
         }
 
 
@@ -1272,6 +1311,7 @@ const completeAppointment = async (req, res) => {
                 message:
                     "You are not assigned to this appointment"
             });
+
         }
 
 
@@ -1281,8 +1321,13 @@ const completeAppointment = async (req, res) => {
                 message:
                     "Only approved appointments can be completed"
             });
+
         }
 
+
+        // ------------------------------------------
+        // COMPLETE APPOINTMENT
+        // ------------------------------------------
 
         appointment.status =
             "completed";
@@ -1290,9 +1335,9 @@ const completeAppointment = async (req, res) => {
         await appointment.save();
 
 
-        // ==================================================
+        // ------------------------------------------
         // NOTIFY CUSTOMER
-        // ==================================================
+        // ------------------------------------------
 
         await sendNotification({
 
@@ -1312,21 +1357,8 @@ const completeAppointment = async (req, res) => {
                 "Thank You for Visiting Beauté Salon",
 
             emailText:
-                "Your appointment has been completed. You can now rate your service.",
+                "Your appointment has been completed successfully. We would love to hear about your experience. Please log in to rate your service and stylist."
 
-            emailHtml:
-                `
-                <h2>Thank You for Visiting Beauté Salon</h2>
-
-                <p>
-                    Your appointment has been completed successfully.
-                </p>
-
-                <p>
-                    We would love to hear about your experience.
-                    Please log in to rate your service and stylist.
-                </p>
-                `
         });
 
 
@@ -1337,7 +1369,10 @@ const completeAppointment = async (req, res) => {
 
         });
 
+
     } catch (error) {
+
+        console.error(error);
 
         return res.status(500).json({
 
@@ -1348,7 +1383,9 @@ const completeAppointment = async (req, res) => {
                 error.message
 
         });
+
     }
+
 };
 
 
@@ -1359,18 +1396,12 @@ const completeAppointment = async (req, res) => {
 module.exports = {
 
     createAppointment,
-
     approveAppointment,
-
     rejectAppointment,
-
     getMyAppointments,
-
     getStylistAppointments,
-
     cancelAppointment,
-
     rescheduleAppointment,
-
     completeAppointment
+
 };

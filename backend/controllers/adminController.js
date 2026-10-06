@@ -6,12 +6,21 @@ const Feedback = require("../models/feedbackModel");
 const Complaint = require("../models/complaintModel");
 
 
-// Get all customers
+// ======================================================
+// GET ALL CUSTOMERS
+// ======================================================
+
 const getCustomers = async (req, res) => {
+
     try {
+
         const customers = await User.find({
             role: "customer"
-        }).select("-password");
+        })
+        .select("-password")
+        .sort({
+            createdAt: -1
+        });
 
         res.status(200).json({
             message: "Customers fetched successfully",
@@ -19,141 +28,314 @@ const getCustomers = async (req, res) => {
         });
 
     } catch (error) {
+
+        console.error(error);
+
         res.status(500).json({
-            message: "Failed to fetch customers"
+            message: "Failed to fetch customers",
+            error: error.message
         });
+
     }
+
 };
 
 
-// Get all stylists
+// ======================================================
+// GET ALL STYLISTS
+// ======================================================
+
 const getStylists = async (req, res) => {
+
     try {
+
         const stylists = await Stylist.find()
-            .populate("user", "name email phone gender dateOfBirth")
-            .populate("services", "name price duration");
+
+            .populate(
+                "user",
+                "name email phone gender dateOfBirth role"
+            )
+
+            .populate(
+                "services",
+                "name description duration price"
+            )
+
+            .sort({
+                createdAt: -1
+            });
+
 
         res.status(200).json({
-            message: "Stylists fetched successfully",
+
+            message:
+                "Stylists fetched successfully",
+
             stylists
+
         });
 
     } catch (error) {
+
+        console.error(error);
+
         res.status(500).json({
-            message: "Failed to fetch stylists"
+
+            message:
+                "Failed to fetch stylists",
+
+            error:
+                error.message
+
         });
+
     }
+
 };
 
 
-// Get all services
+// ======================================================
+// GET ALL SERVICES
+// ======================================================
+
 const getServices = async (req, res) => {
+
     try {
+
         const services = await Service.find()
-            .populate("category", "name");
+
+            .populate(
+                "category",
+                "name"
+            )
+
+            .sort({
+                createdAt: -1
+            });
+
 
         res.status(200).json({
-            message: "Services fetched successfully",
+
+            message:
+                "Services fetched successfully",
+
             services
+
         });
 
     } catch (error) {
+
+        console.error(error);
+
         res.status(500).json({
-            message: "Failed to fetch services"
+
+            message:
+                "Failed to fetch services",
+
+            error:
+                error.message
+
         });
+
     }
+
 };
 
 
-// Get all appointments
+// ======================================================
+// GET ALL APPOINTMENTS
+// ======================================================
+
 const getAppointments = async (req, res) => {
+
     try {
-        const appointments = await Appointment.find()
-            .populate("customer", "name email phone")
-            .populate({
-                path: "stylist",
-                populate: {
-                    path: "user",
-                    select: "name email"
-                }
-            })
-            .populate("service", "name price duration")
-            .sort({ date: -1 });
 
-        res.status(200).json({
-            message: "Appointments fetched successfully",
-            appointments
-        });
+        const appointments =
+            await Appointment.find()
 
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to fetch appointments"
-        });
-    }
-};
+                .populate(
+                    "customer",
+                    "name email phone"
+                )
 
-
-// Get all feedback
-const getFeedback = async (req, res) => {
-    try {
-        const feedback = await Feedback.find()
-            .populate("customer", "name email")
-            .populate({
-                path: "appointment",
-                populate: [
-                    {
-                        path: "service",
-                        select: "name price"
-                    },
-                    {
-                        path: "stylist",
-                        populate: {
-                            path: "user",
-                            select: "name"
-                        }
+                .populate({
+                    path: "stylist",
+                    populate: {
+                        path: "user",
+                        select:
+                            "name email phone"
                     }
-                ]
-            })
-            .sort({ createdAt: -1 });
+                })
+
+                .populate(
+                    "service",
+                    "name description duration price"
+                )
+
+                .sort({
+                    date: 1,
+                    startTime: 1
+                });
+
 
         res.status(200).json({
-            message: "Feedback fetched successfully",
-            feedback
+
+            message:
+                "Appointments fetched successfully",
+
+            appointments
+
         });
 
     } catch (error) {
+
+        console.error(error);
+
         res.status(500).json({
-            message: "Failed to fetch feedback"
+
+            message:
+                "Failed to fetch appointments",
+
+            error:
+                error.message
+
         });
+
     }
+
 };
 
 
-// Get all complaints
-const getComplaints = async (req, res) => {
+// ======================================================
+// GET ALL FEEDBACK
+// ======================================================
+
+const getFeedback = async (req, res) => {
+
     try {
-        const complaints = await Complaint.find()
-            .populate("customer", "name email phone")
-            .sort({ createdAt: -1 });
+
+        const feedback =
+            await Feedback.find()
+
+                .populate(
+                    "customer",
+                    "name email"
+                )
+
+                .populate({
+                    path: "appointment",
+
+                    populate: [
+                        {
+                            path: "service",
+                            select:
+                                "name price duration"
+                        },
+                        {
+                            path: "stylist",
+
+                            populate: {
+                                path: "user",
+                                select:
+                                    "name email"
+                            }
+                        }
+                    ]
+                })
+
+                .sort({
+                    createdAt: -1
+                });
+
 
         res.status(200).json({
-            message: "Complaints fetched successfully",
-            complaints
+
+            message:
+                "Feedback fetched successfully",
+
+            feedback
+
         });
 
     } catch (error) {
+
+        console.error(error);
+
         res.status(500).json({
-            message: "Failed to fetch complaints"
+
+            message:
+                "Failed to fetch feedback",
+
+            error:
+                error.message
+
         });
+
     }
+
 };
 
+
+// ======================================================
+// GET ALL COMPLAINTS
+// ======================================================
+
+const getComplaints = async (req, res) => {
+
+    try {
+
+        const complaints =
+            await Complaint.find()
+
+                .populate(
+                    "customer",
+                    "name email phone"
+                )
+
+                .sort({
+                    createdAt: -1
+                });
+
+
+        res.status(200).json({
+
+            message:
+                "Complaints fetched successfully",
+
+            complaints
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+
+            message:
+                "Failed to fetch complaints",
+
+            error:
+                error.message
+
+        });
+
+    }
+
+};
+
+
+// ======================================================
+// EXPORT
+// ======================================================
 
 module.exports = {
+
     getCustomers,
     getStylists,
     getServices,
     getAppointments,
     getFeedback,
     getComplaints
+
 };

@@ -17,6 +17,7 @@ const serviceHistoryRoutes = require("./routes/serviceHistoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const emailRoutes = require("./routes/emailRoutes");
 
 const db = require('./connection');
 db();
@@ -37,6 +38,7 @@ app.use("/api/history", serviceHistoryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/complaint", complaintRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/email", emailRoutes);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
