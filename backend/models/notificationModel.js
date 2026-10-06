@@ -22,6 +22,7 @@ const notificationSchema = new mongoose.Schema(
                 "rejection",
                 "cancellation",
                 "reschedule",
+                "completion",
                 "reminder"
             ],
             required: true
@@ -32,7 +33,9 @@ const notificationSchema = new mongoose.Schema(
             default: false
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true
+    }
 );
 
 const Notification = mongoose.model(
