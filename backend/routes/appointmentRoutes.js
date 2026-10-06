@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    createAppointment, approveAppointment, rejectAppointment, getMyAppointments, getStylistAppointments, cancelAppointment, rescheduleAppointment,completeAppointment
+    createAppointment, approveAppointment, rejectAppointment, getMyAppointments, getStylistAppointments, cancelAppointment, rescheduleAppointment, completeAppointment
 } = require("../controllers/appointmentController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -42,7 +42,12 @@ router.get(
     roleMiddleware("stylist"),
     getStylistAppointments
 );
-
+router.put(
+    "/:id/cancel",
+    authMiddleware,
+    roleMiddleware("customer"),
+    cancelAppointment
+);
 router.put(
     "/:id/reschedule",
     authMiddleware,
@@ -56,5 +61,6 @@ router.put(
     roleMiddleware("stylist"),
     completeAppointment
 );
+
 
 module.exports = router;
