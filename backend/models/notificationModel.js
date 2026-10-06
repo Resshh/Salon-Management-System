@@ -29,7 +29,10 @@ const notificationSchema = new mongoose.Schema(
                 "cancellation",
                 "reschedule",
                 "completion",
-                "reminder"
+                "reminder",
+                "payment",
+                "promotion",
+                "general"
             ],
             required: true
         },

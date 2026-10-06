@@ -1,5 +1,6 @@
 const ServiceHistory = require("../models/serviceHistoryModel");
 const Appointment = require("../models/appointmentModel");
+const Stylist = require("../models/stylistModel");
 
 
 // Create service history when appointment is completed
@@ -87,8 +88,19 @@ const getCustomerHistory = async (req, res) => {
 // Stylist views own service history
 const getStylistHistory = async (req, res) => {
     try {
+        // The token only has the userId, so find the stylist profile first
+        const stylist = await Stylist.findOne({
+            user: req.user.userId
+        });
+
+        if (!stylist) {
+            return res.status(404).json({
+                message: "Stylist profile not found"
+            });
+        }
+
         const history = await ServiceHistory.find({
-            stylist: req.user.stylistId
+            stylist: stylist._id
         })
             .populate("customer", "name email phone")
             .populate("service", "name price duration")
@@ -123,7 +135,11 @@ const updateServiceNotes = async (req, res) => {
             });
         }
 
-        if (history.stylist.toString() !== req.user.stylistId) {
+        const stylist = await Stylist.findOne({
+            user: req.user.userId
+        });
+
+        if (!stylist || history.stylist.toString() !== stylist._id.toString()) {
             return res.status(403).json({
                 message: "You can only update your own service history"
             });
@@ -146,7 +162,37 @@ const updateServiceNotes = async (req, res) => {
 };
 
 
+// Stylist views the previous services of one customer
+const getCustomerHistoryForStylist = async (req, res) => {
+    try {
+        const history = await ServiceHistory.find({
+            customer: req.params.customerId
+        })
+            .populate({
+                path: "stylist",
+                populate: {
+                    path: "user",
+                    select: "name"
+                }
+            })
+            .populate("service", "name")
+            .sort({ serviceDate: -1 });
+
+        res.status(200).json({
+            message: "Customer history fetched successfully",
+            history
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to fetch customer history"
+        });
+    }
+};
+
+
 module.exports = {
+    getCustomerHistoryForStylist,
     createServiceHistory,
     getCustomerHistory,
     getStylistHistory,

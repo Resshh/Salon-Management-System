@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,16 +21,13 @@ function Login() {
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("role", response.data.role);
 
-            if (response.data.role === "customer") {
-                navigate("/customer");
-            } else if (response.data.role === "stylist") {
-                navigate("/stylist");
-            } else if (response.data.role === "admin") {
-                navigate("/admin");
-            }
+            // App.jsx reads the token only when the page loads,
+            // so load the dashboard with a full page reload
+            // (the same way Logout goes back to /login).
+            window.location.href = `/${response.data.role}`;
 
         } catch (error) {
-            console.log(
+            alert(
                 error.response?.data?.message || "Login failed"
             );
         }

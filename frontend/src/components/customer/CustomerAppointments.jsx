@@ -12,6 +12,9 @@ function CustomerAppointments() {
     const [appointmentDate, setAppointmentDate] = useState("");
     const [startTime, setStartTime] = useState("");
 
+    // Free time slots for the chosen service, stylist and date
+    const [slots, setSlots] = useState([]);
+
     const [showBooking, setShowBooking] = useState(false);
 
     const token = localStorage.getItem("token");
@@ -21,6 +24,142 @@ function CustomerAppointments() {
         getStylists();
         getAppointments();
     }, []);
+
+    // Load the free slots again whenever service, stylist or date changes
+    useEffect(() => {
+        getSlots();
+    }, [selectedService, selectedStylist, appointmentDate]);
+
+
+    // ================= AVAILABLE SLOTS =================
+
+    const getSlots = async () => {
+
+        setStartTime("");
+
+        if (!selectedService || !selectedStylist || !appointmentDate) {
+            setSlots([]);
+            return;
+        }
+
+        try {
+
+            const response = await axios.get(
+                "http://localhost:5000/api/appointment/slots",
+                {
+                    params: {
+                        stylist: selectedStylist,
+                        service: selectedService,
+                        date: appointmentDate
+                    },
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            setSlots(response.data.slots || []);
+
+        } catch (error) {
+
+            setSlots([]);
+
+            console.log(
+                error.response?.data?.message ||
+                "Failed to load slots"
+            );
+
+        }
+
+    };
+
+
+    // ================= PAY WITH RAZORPAY =================
+
+    const payAppointment = async (appointment) => {
+
+        const couponCode = window.prompt(
+            "Enter a coupon code (leave empty if you do not have one):",
+            ""
+        );
+
+        // prompt gives null when the user clicks Cancel
+        if (couponCode === null) {
+            return;
+        }
+
+        try {
+
+            // Step 1: our backend creates an order on Razorpay
+            const response = await axios.post(
+                "http://localhost:5000/api/payment/order",
+                {
+                    appointment: appointment._id,
+                    couponCode: couponCode.trim()
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            // Step 2: open the Razorpay payment window
+            const options = {
+                key: response.data.key,
+                amount: response.data.amount,
+                currency: response.data.currency,
+                order_id: response.data.orderId,
+                name: "BEAUTÉ Salon",
+                description: appointment.service?.name || "Salon service",
+
+                // Step 3: Razorpay calls this after a successful payment
+                handler: async (paymentResult) => {
+
+                    try {
+
+                        // Step 4: our backend checks the payment is genuine
+                        await axios.post(
+                            "http://localhost:5000/api/payment/verify",
+                            paymentResult,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`
+                                }
+                            }
+                        );
+
+                        alert("Payment successful.");
+
+                        getAppointments();
+
+                    } catch (error) {
+
+                        alert(
+                            error.response?.data?.message ||
+                            "Payment verification failed"
+                        );
+
+                    }
+
+                }
+            };
+
+            const paymentWindow = new window.Razorpay(options);
+
+            paymentWindow.open();
+
+        } catch (error) {
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to start payment"
+            );
+
+        }
+
+    };
+
 
     // ================= SERVICES =================
 
@@ -407,7 +546,7 @@ function CustomerAppointments() {
                                         key={stylist._id}
                                         value={stylist._id}
                                     >
-                                        {stylist.user.name}
+                                        {stylist.user?.name}
                                     </option>
 
                                 ))}
@@ -442,17 +581,35 @@ function CustomerAppointments() {
                         <div>
 
                             <label className="text-sm text-[#6e5545]">
-                                Start Time
+                                Available Time Slot
                             </label>
 
-                            <input
-                                type="time"
+                            <select
                                 value={startTime}
                                 onChange={(e) =>
                                     setStartTime(e.target.value)
                                 }
                                 className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
-                            />
+                            >
+
+                                <option value="">
+                                    {slots.length > 0
+                                        ? "Select time slot"
+                                        : "No slots (choose service, stylist and date)"}
+                                </option>
+
+                                {slots.map((slot) => (
+
+                                    <option
+                                        key={slot.startTime}
+                                        value={slot.startTime}
+                                    >
+                                        {slot.startTime} - {slot.endTime}
+                                    </option>
+
+                                ))}
+
+                            </select>
 
                         </div>
 
@@ -520,6 +677,33 @@ function CustomerAppointments() {
                                     <p className="text-sm tracking-[2px] uppercase text-[#5a182b]">
                                         {appointment.status}
                                     </p>
+
+                                    {/* PAYMENT */}
+
+                                    {appointment.paymentStatus === "paid" && (
+
+                                        <p className="mt-2 text-sm text-green-700">
+                                            PAID ₹{appointment.amount}
+                                        </p>
+
+                                    )}
+
+                                    {(appointment.status === "approved" ||
+                                        appointment.status === "completed") &&
+                                        appointment.paymentStatus !== "paid" && (
+
+                                            <button
+                                                onClick={() =>
+                                                    payAppointment(
+                                                        appointment
+                                                    )
+                                                }
+                                                className="mt-4 bg-[#5a182b] px-4 py-2 text-sm text-[#f7efe5] hover:bg-[#321d1d]"
+                                            >
+                                                PAY ₹{appointment.service?.price}
+                                            </button>
+
+                                        )}
 
                                     {(appointment.status === "pending" ||
                                         appointment.status === "approved") && (

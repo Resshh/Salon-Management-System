@@ -1,0 +1,9 @@
+# Docs and notes stay local, never pushed
+*.md
+docs/
+
+# Claude Code local settings
+.claude/
+
+# Requirement documents
+*.pdf

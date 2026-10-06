@@ -1,5 +1,6 @@
 const Feedback = require("../models/feedbackModel");
 const Appointment = require("../models/appointmentModel");
+const Stylist = require("../models/stylistModel");
 
 
 // Customer submits feedback
@@ -130,7 +131,56 @@ const getAllFeedback = async (req, res) => {
 };
 
 
+// Stylist views ratings and feedback for their own appointments
+const getStylistFeedback = async (req, res) => {
+    try {
+        const stylist = await Stylist.findOne({
+            user: req.user.userId
+        });
+
+        if (!stylist) {
+            return res.status(404).json({
+                message: "Stylist profile not found"
+            });
+        }
+
+        // Step 1: all appointments of this stylist
+        const appointments = await Appointment.find({
+            stylist: stylist._id
+        }).select("_id");
+
+        const appointmentIds = appointments.map((item) => item._id);
+
+        // Step 2: feedback written for those appointments
+        const feedback = await Feedback.find({
+            appointment: { $in: appointmentIds }
+        })
+            .populate("customer", "name")
+            .populate({
+                path: "appointment",
+                select: "date service",
+                populate: {
+                    path: "service",
+                    select: "name"
+                }
+            })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            message: "Feedback fetched successfully",
+            feedback
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to fetch feedback"
+        });
+    }
+};
+
+
 module.exports = {
+    getStylistFeedback,
     createFeedback,
     getMyFeedback,
     getAllFeedback

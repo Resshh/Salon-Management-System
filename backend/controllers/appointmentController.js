@@ -2,81 +2,10 @@ const Appointment = require("../models/appointmentModel");
 const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
 const Service = require("../models/serviceModel");
-const Notification = require("../models/notificationModel");
+const ServiceHistory = require("../models/serviceHistoryModel");
+const SalonSetting = require("../models/salonSettingModel");
 
-const sendEmail = require("../utils/emailService");
-
-
-// ======================================================
-// SEND IN-APP NOTIFICATION + EMAIL
-// ======================================================
-
-const sendNotification = async ({
-    recipient,
-    title,
-    message,
-    type,
-    emailSubject,
-    emailText
-}) => {
-
-    // -------------------------------
-    // IN-APP NOTIFICATION
-    // -------------------------------
-
-    try {
-
-        await Notification.create({
-            recipient,
-            title,
-            message,
-            type
-        });
-
-    } catch (error) {
-
-        console.error(
-            "In-app notification failed:",
-            error.message
-        );
-
-    }
-
-
-    // -------------------------------
-    // EMAIL NOTIFICATION
-    // -------------------------------
-
-    try {
-
-        const user = await User.findById(recipient)
-            .select("email");
-
-        if (
-            user &&
-            user.email &&
-            emailSubject &&
-            emailText
-        ) {
-
-            await sendEmail(
-                user.email,
-                emailSubject,
-                emailText
-            );
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Email notification failed:",
-            error.message
-        );
-
-    }
-
-};
+const sendNotification = require("../utils/notificationService");
 
 
 // ======================================================
@@ -146,6 +75,178 @@ const isWithinWorkingSchedule = (
     return {
         valid: true
     };
+
+};
+
+
+// ======================================================
+// CHECK SALON WORKING HOURS AND HOLIDAYS
+// ======================================================
+
+const DAY_NAMES = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+];
+
+const isSalonOpen = async (date, startTime, endTime) => {
+
+    const settings = await SalonSetting.findOne();
+
+    // Admin has not saved any settings yet, so nothing to check
+    if (!settings) {
+        return { valid: true };
+    }
+
+    const holiday = settings.holidays.find(
+        (item) => item.date === date
+    );
+
+    if (holiday) {
+        return {
+            valid: false,
+            message: `Salon is closed on ${date} (${holiday.reason || "Holiday"})`
+        };
+    }
+
+    const dayName =
+        DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
+
+    if (settings.closedDays.includes(dayName)) {
+        return {
+            valid: false,
+            message: `Salon is closed on ${dayName}`
+        };
+    }
+
+    if (startTime < settings.openTime || endTime > settings.closeTime) {
+        return {
+            valid: false,
+            message: `Salon is open from ${settings.openTime} to ${settings.closeTime}`
+        };
+    }
+
+    return { valid: true };
+
+};
+
+
+// "09:30" -> 570 minutes
+const toMinutes = (time) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+};
+
+// 570 minutes -> "09:30"
+const toTime = (totalMinutes) => {
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const minutes = String(totalMinutes % 60).padStart(2, "0");
+    return `${hours}:${minutes}`;
+};
+
+
+// ======================================================
+// GET AVAILABLE SLOTS
+// GET /api/appointment/slots?stylist=..&service=..&date=YYYY-MM-DD
+// ======================================================
+
+const getAvailableSlots = async (req, res) => {
+
+    try {
+
+        const { stylist, service, date } = req.query;
+
+        if (!stylist || !service || !date) {
+            return res.status(400).json({
+                message: "Stylist, service and date are required"
+            });
+        }
+
+        const existingStylist = await Stylist.findById(stylist);
+        const existingService = await Service.findById(service);
+
+        if (!existingStylist || !existingService) {
+            return res.status(404).json({
+                message: "Stylist or service not found"
+            });
+        }
+
+        // Stylist's working hours for that day
+        const dayName =
+            DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
+
+        const schedule = existingStylist.workingSchedule.find(
+            (item) => item.day.toLowerCase() === dayName.toLowerCase()
+        );
+
+        if (!schedule) {
+            return res.status(200).json({
+                message: `Stylist is not available on ${dayName}`,
+                slots: []
+            });
+        }
+
+        // Appointments that already block the stylist on that date
+        const bookedAppointments = await Appointment.find({
+            stylist,
+            date,
+            status: { $in: ["pending", "approved"] }
+        });
+
+        const slots = [];
+
+        const duration = existingService.duration;
+        const dayStart = toMinutes(schedule.startTime);
+        const dayEnd = toMinutes(schedule.endTime);
+
+        // Try a slot every 30 minutes
+        for (
+            let start = dayStart;
+            start + duration <= dayEnd;
+            start += 30
+        ) {
+
+            const startTime = toTime(start);
+            const endTime = toTime(start + duration);
+
+            const salonCheck = await isSalonOpen(date, startTime, endTime);
+
+            if (!salonCheck.valid) {
+                continue;
+            }
+
+            // Two time ranges overlap when each one starts before the other ends
+            const isBooked = bookedAppointments.some(
+                (item) =>
+                    item.startTime < endTime &&
+                    item.endTime > startTime
+            );
+
+            if (!isBooked) {
+                slots.push({ startTime, endTime });
+            }
+
+        }
+
+        return res.status(200).json({
+            message: "Available slots fetched successfully",
+            slots
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to fetch available slots",
+            error: error.message
+        });
+
+    }
 
 };
 
@@ -264,6 +365,23 @@ const createAppointment = async (req, res) => {
             return res.status(400).json({
                 message:
                     "Selected stylist does not provide this service"
+            });
+
+        }
+
+
+        // ------------------------------------------
+        // CHECK SALON HOURS AND HOLIDAYS
+        // ------------------------------------------
+
+        const salonCheck =
+            await isSalonOpen(date, startTime, endTime);
+
+        if (!salonCheck.valid) {
+
+            return res.status(400).json({
+                message:
+                    salonCheck.message
             });
 
         }
@@ -714,10 +832,14 @@ const getMyAppointments = async (req, res) => {
                 customer
             })
 
-            .populate(
-                "stylist",
-                "specialization"
-            )
+            .populate({
+                path: "stylist",
+                select: "specialization",
+                populate: {
+                    path: "user",
+                    select: "name"
+                }
+            })
 
             .populate({
                 path: "service",
@@ -1093,6 +1215,23 @@ const rescheduleAppointment = async (req, res) => {
 
 
         // ------------------------------------------
+        // CHECK SALON HOURS AND HOLIDAYS
+        // ------------------------------------------
+
+        const salonCheck =
+            await isSalonOpen(date, startTime, endTime);
+
+        if (!salonCheck.valid) {
+
+            return res.status(400).json({
+                message:
+                    salonCheck.message
+            });
+
+        }
+
+
+        // ------------------------------------------
         // CHECK WORKING SCHEDULE
         // ------------------------------------------
 
@@ -1336,6 +1475,19 @@ const completeAppointment = async (req, res) => {
 
 
         // ------------------------------------------
+        // SAVE SERVICE HISTORY
+        // ------------------------------------------
+
+        await ServiceHistory.create({
+            appointment: appointment._id,
+            customer: appointment.customer,
+            stylist: appointment.stylist,
+            service: appointment.service,
+            serviceDate: appointment.date
+        });
+
+
+        // ------------------------------------------
         // NOTIFY CUSTOMER
         // ------------------------------------------
 
@@ -1390,11 +1542,241 @@ const completeAppointment = async (req, res) => {
 
 
 // ======================================================
+// MARK NO-SHOW (customer did not come)
+// ======================================================
+
+const markNoShow = async (req, res) => {
+
+    try {
+
+        const stylist = await Stylist.findOne({
+            user: req.user.userId
+        });
+
+        if (!stylist) {
+            return res.status(404).json({
+                message: "Stylist profile not found"
+            });
+        }
+
+        const appointment = await Appointment.findById(req.params.id);
+
+        if (!appointment) {
+            return res.status(404).json({
+                message: "Appointment not found"
+            });
+        }
+
+        if (appointment.stylist.toString() !== stylist._id.toString()) {
+            return res.status(403).json({
+                message: "You are not assigned to this appointment"
+            });
+        }
+
+        if (appointment.status !== "approved") {
+            return res.status(400).json({
+                message: "Only approved appointments can be marked as no-show"
+            });
+        }
+
+        appointment.status = "no-show";
+
+        await appointment.save();
+
+        return res.status(200).json({
+            message: "Appointment marked as no-show"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to mark no-show",
+            error: error.message
+        });
+
+    }
+
+};
+
+
+// ======================================================
+// ADMIN: APPROVE / CANCEL / RESCHEDULE ANY APPOINTMENT
+// PUT /api/admin/appointments/:id
+// body: { status } or { date, startTime, endTime }
+// ======================================================
+
+const updateAppointmentByAdmin = async (req, res) => {
+
+    try {
+
+        const { status, date, startTime, endTime } = req.body;
+
+        const appointment = await Appointment.findById(req.params.id);
+
+        if (!appointment) {
+            return res.status(404).json({
+                message: "Appointment not found"
+            });
+        }
+
+        if (
+            appointment.status !== "pending" &&
+            appointment.status !== "approved"
+        ) {
+            return res.status(400).json({
+                message: "This appointment can no longer be changed"
+            });
+        }
+
+        let title = "";
+        let type = "";
+
+        if (status) {
+
+            // ---------- APPROVE OR CANCEL ----------
+
+            if (status !== "approved" && status !== "cancelled") {
+                return res.status(400).json({
+                    message: "Admin can only approve or cancel"
+                });
+            }
+
+            appointment.status = status;
+
+            if (status === "approved") {
+                title = "Appointment Approved";
+                type = "approval";
+            } else {
+                title = "Appointment Cancelled";
+                type = "cancellation";
+            }
+
+        } else {
+
+            // ---------- RESCHEDULE ----------
+
+            if (!date || !startTime || !endTime) {
+                return res.status(400).json({
+                    message: "Date, start time and end time are required"
+                });
+            }
+
+            if (startTime >= endTime) {
+                return res.status(400).json({
+                    message: "End time must be after start time"
+                });
+            }
+
+            const stylist = await Stylist.findById(appointment.stylist);
+
+            if (!stylist) {
+                return res.status(404).json({
+                    message: "Stylist not found"
+                });
+            }
+
+            const salonCheck = await isSalonOpen(date, startTime, endTime);
+
+            if (!salonCheck.valid) {
+                return res.status(400).json({
+                    message: salonCheck.message
+                });
+            }
+
+            const scheduleCheck = isWithinWorkingSchedule(
+                stylist,
+                date,
+                startTime,
+                endTime
+            );
+
+            if (!scheduleCheck.valid) {
+                return res.status(400).json({
+                    message: scheduleCheck.message
+                });
+            }
+
+            const overlapping = await Appointment.findOne({
+                _id: { $ne: appointment._id },
+                stylist: appointment.stylist,
+                date,
+                status: { $in: ["pending", "approved"] },
+                startTime: { $lt: endTime },
+                endTime: { $gt: startTime }
+            });
+
+            if (overlapping) {
+                return res.status(400).json({
+                    message: "Stylist is already booked for the new time"
+                });
+            }
+
+            appointment.date = date;
+            appointment.startTime = startTime;
+            appointment.endTime = endTime;
+
+            title = "Appointment Rescheduled";
+            type = "reschedule";
+
+        }
+
+        await appointment.save();
+
+        // Tell the customer and the stylist
+        const stylistProfile = await Stylist.findById(appointment.stylist);
+
+        const message =
+            `${title} by the salon. Date: ${new Date(appointment.date).toDateString()}, time: ${appointment.startTime} - ${appointment.endTime}.`;
+
+        await sendNotification({
+            recipient: appointment.customer,
+            title,
+            message,
+            type,
+            emailSubject: `${title} - Beauté Salon`,
+            emailText: message
+        });
+
+        if (stylistProfile) {
+            await sendNotification({
+                recipient: stylistProfile.user,
+                title,
+                message,
+                type,
+                emailSubject: `${title} - Beauté Salon`,
+                emailText: message
+            });
+        }
+
+        return res.status(200).json({
+            message: "Appointment updated successfully"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to update appointment",
+            error: error.message
+        });
+
+    }
+
+};
+
+
+// ======================================================
 // EXPORT
 // ======================================================
 
 module.exports = {
 
+    getAvailableSlots,
+    markNoShow,
+    updateAppointmentByAdmin,
     createAppointment,
     approveAppointment,
     rejectAppointment,

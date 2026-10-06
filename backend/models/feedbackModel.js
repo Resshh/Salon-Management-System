@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const complaintSchema = new mongoose.Schema(
+const feedbackSchema = new mongoose.Schema(
     {
         customer: {
             type: mongoose.Schema.Types.ObjectId,
@@ -8,25 +8,21 @@ const complaintSchema = new mongoose.Schema(
             required: true
         },
 
-        subject: {
-            type: String,
+        appointment: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Appointment",
             required: true,
-            trim: true
+            unique: true
         },
 
-        description: {
-            type: String,
+        rating: {
+            type: Number,
             required: true,
-            trim: true
+            min: 1,
+            max: 5
         },
 
-        status: {
-            type: String,
-            enum: ["pending", "in-progress", "resolved"],
-            default: "pending"
-        },
-
-        adminResponse: {
+        review: {
             type: String,
             trim: true
         }
@@ -34,6 +30,6 @@ const complaintSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-const Complaint = mongoose.model("Complaint", complaintSchema);
+const Feedback = mongoose.model("Feedback", feedbackSchema);
 
-module.exports = Complaint;
+module.exports = Feedback;

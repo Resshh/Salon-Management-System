@@ -2,20 +2,20 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    createCategory,
-    getAllCategories
-} = require("../controllers/categoryController");
+    getSettings,
+    updateSettings
+} = require("../controllers/settingsController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
-router.post(
+router.get("/", getSettings);
+
+router.put(
     "/",
     authMiddleware,
     roleMiddleware("admin"),
-    createCategory
+    updateSettings
 );
-
-router.get("/", getAllCategories);
 
 module.exports = router;

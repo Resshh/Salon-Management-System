@@ -1,4 +1,5 @@
 const Complaint = require("../models/complaintModel");
+const sendNotification = require("../utils/notificationService");
 
 
 // Customer creates complaint
@@ -87,6 +88,15 @@ const updateComplaint = async (req, res) => {
         }
 
         await complaint.save();
+
+        await sendNotification({
+            recipient: complaint.customer,
+            title: "Complaint Updated",
+            message: `Your complaint "${complaint.subject}" is now ${complaint.status}.`,
+            type: "general",
+            emailSubject: "Update on your complaint - Beauté Salon",
+            emailText: `Your complaint "${complaint.subject}" is now ${complaint.status}.\n\nSalon response: ${complaint.adminResponse || "No response yet"}`
+        });
 
         res.status(200).json({
             message: "Complaint updated successfully",

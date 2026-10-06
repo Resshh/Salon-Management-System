@@ -35,14 +35,17 @@ function StylistProfile() {
                 }
             );
 
-            setProfile(response.data);
+            // The API sends { message, stylist }
+            const stylist = response.data.stylist;
+
+            setProfile(stylist);
 
             setSpecialization(
-                response.data.specialization || ""
+                stylist.specialization || ""
             );
 
             const serviceIds =
-                response.data.services?.map(
+                stylist.services?.map(
                     (service) => service._id
                 ) || [];
 

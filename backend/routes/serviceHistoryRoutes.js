@@ -6,6 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
 const {
+    getCustomerHistoryForStylist,
     createServiceHistory,
     getCustomerHistory,
     getStylistHistory,
@@ -48,5 +49,12 @@ router.put(
     updateServiceNotes
 );
 
+
+router.get(
+    "/customer/:customerId",
+    authMiddleware,
+    roleMiddleware("stylist"),
+    getCustomerHistoryForStylist
+);
 
 module.exports = router;

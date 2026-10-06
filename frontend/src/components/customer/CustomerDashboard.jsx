@@ -2,6 +2,10 @@ import CustomerServices from "./CustomerServices";
 import CustomerStylists from "./CustomerStylists";
 import CustomerAppointments from "./CustomerAppointments";
 import CustomerNotifications from "./CustomerNotification";
+import CustomerHistory from "./CustomerHistory";
+import CustomerFeedback from "./CustomerFeedback";
+import CustomerComplaints from "./CustomerComplaints";
+import CustomerMembership from "./CustomerMembership";
 
 function CustomerDashboard() {
 
@@ -44,6 +48,27 @@ function CustomerDashboard() {
                         className="cursor-pointer hover:text-[#5a182b]"
                     >
                         Appointments
+                    </a>
+
+                    <a
+                        href="#history"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
+                        History
+                    </a>
+
+                    <a
+                        href="#feedback"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
+                        Feedback
+                    </a>
+
+                    <a
+                        href="#complaints"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
+                        Complaints
                     </a>
 
                     <a
@@ -102,6 +127,11 @@ function CustomerDashboard() {
             </section>
 
 
+            {/* ================= MEMBERSHIP ================= */}
+
+            <CustomerMembership />
+
+
             {/* ================= SERVICES ================= */}
 
             <CustomerServices />
@@ -115,6 +145,20 @@ function CustomerDashboard() {
             {/* ================= APPOINTMENTS ================= */}
 
             <CustomerAppointments />
+            
+            {/* ================= HISTORY ================= */}
+
+            <CustomerHistory />
+
+
+            {/* ================= FEEDBACK ================= */}
+
+            <CustomerFeedback />
+
+
+            {/* ================= COMPLAINTS ================= */}
+
+            <CustomerComplaints />
 
 
             {/* ================= NOTIFICATIONS ================= */}

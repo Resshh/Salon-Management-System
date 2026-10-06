@@ -39,6 +39,18 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ["customer", "stylist", "admin"],
             required: true
+        },
+
+        // Only used for customers
+        membership: {
+            type: String,
+            enum: ["none", "silver", "gold"],
+            default: "none"
+        },
+
+        loyaltyPoints: {
+            type: Number,
+            default: 0
         }
     },
     {

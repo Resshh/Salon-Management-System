@@ -11,7 +11,10 @@ const {
     getServices,
     getAppointments,
     getFeedback,
-    getComplaints
+    getComplaints,
+    updateUser,
+    deleteUser,
+    sendPromotion
 } = require("../controllers/adminController");
 
 
@@ -62,5 +65,37 @@ router.get(
     getComplaints
 );
 
+
+const {
+    updateAppointmentByAdmin
+} = require("../controllers/appointmentController");
+
+router.put(
+    "/users/:id",
+    authMiddleware,
+    roleMiddleware("admin"),
+    updateUser
+);
+
+router.delete(
+    "/users/:id",
+    authMiddleware,
+    roleMiddleware("admin"),
+    deleteUser
+);
+
+router.put(
+    "/appointments/:id",
+    authMiddleware,
+    roleMiddleware("admin"),
+    updateAppointmentByAdmin
+);
+
+router.post(
+    "/notify",
+    authMiddleware,
+    roleMiddleware("admin"),
+    sendPromotion
+);
 
 module.exports = router;

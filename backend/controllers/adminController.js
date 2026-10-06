@@ -4,6 +4,7 @@ const Service = require("../models/serviceModel");
 const Appointment = require("../models/appointmentModel");
 const Feedback = require("../models/feedbackModel");
 const Complaint = require("../models/complaintModel");
+const sendNotification = require("../utils/notificationService");
 
 
 // ======================================================
@@ -71,7 +72,10 @@ const getStylists = async (req, res) => {
             message:
                 "Stylists fetched successfully",
 
-            stylists
+            // Skip profiles whose user account was deleted
+            stylists: stylists.filter(
+                (stylist) => stylist.user
+            )
 
         });
 
@@ -326,10 +330,190 @@ const getComplaints = async (req, res) => {
 
 
 // ======================================================
+// UPDATE A CUSTOMER OR STYLIST
+// PUT /api/admin/users/:id
+// ======================================================
+
+const updateUser = async (req, res) => {
+
+    try {
+
+        const {
+            name,
+            phone,
+            membership,
+            loyaltyPoints,
+            specialization
+        } = req.body;
+
+        const user = await User.findById(req.params.id);
+
+        if (!user || user.role === "admin") {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        user.name = name ?? user.name;
+        user.phone = phone ?? user.phone;
+        user.membership = membership ?? user.membership;
+        user.loyaltyPoints = loyaltyPoints ?? user.loyaltyPoints;
+
+        await user.save();
+
+        // Specialization is stored on the stylist profile
+        if (user.role === "stylist" && specialization) {
+
+            await Stylist.findOneAndUpdate(
+                { user: user._id },
+                { specialization }
+            );
+
+        }
+
+        res.status(200).json({
+            message: "User updated successfully"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to update user",
+            error: error.message
+        });
+
+    }
+
+};
+
+
+// ======================================================
+// DELETE A CUSTOMER OR STYLIST
+// DELETE /api/admin/users/:id
+// ======================================================
+
+const deleteUser = async (req, res) => {
+
+    try {
+
+        const user = await User.findById(req.params.id);
+
+        if (!user || user.role === "admin") {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        // Do not delete someone who still has open appointments
+        let filter = { customer: user._id };
+
+        if (user.role === "stylist") {
+
+            const stylist = await Stylist.findOne({ user: user._id });
+
+            filter = { stylist: stylist ? stylist._id : null };
+
+        }
+
+        const openAppointment = await Appointment.findOne({
+            ...filter,
+            status: { $in: ["pending", "approved"] }
+        });
+
+        if (openAppointment) {
+            return res.status(400).json({
+                message: "This user still has pending or approved appointments"
+            });
+        }
+
+        if (user.role === "stylist") {
+            await Stylist.findOneAndDelete({ user: user._id });
+        }
+
+        await User.findByIdAndDelete(user._id);
+
+        res.status(200).json({
+            message: "User deleted successfully"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to delete user",
+            error: error.message
+        });
+
+    }
+
+};
+
+
+// ======================================================
+// SEND A NOTIFICATION / OFFER TO ALL CUSTOMERS
+// POST /api/admin/notify   body: { title, message }
+// ======================================================
+
+const sendPromotion = async (req, res) => {
+
+    try {
+
+        const { title, message } = req.body;
+
+        if (!title || !message) {
+            return res.status(400).json({
+                message: "Title and message are required"
+            });
+        }
+
+        const customers = await User.find({
+            role: "customer"
+        }).select("_id");
+
+        // Sends to one customer at a time. Fine for a small salon; a job queue is better for a very large customer list.
+        for (const customer of customers) {
+
+            await sendNotification({
+                recipient: customer._id,
+                title,
+                message,
+                type: "promotion",
+                emailSubject: `${title} - Beauté Salon`,
+                emailText: message
+            });
+
+        }
+
+        res.status(200).json({
+            message: `Notification sent to ${customers.length} customers`
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to send notification",
+            error: error.message
+        });
+
+    }
+
+};
+
+
+// ======================================================
 // EXPORT
 // ======================================================
 
 module.exports = {
+
+    updateUser,
+    deleteUser,
+    sendPromotion,
 
     getCustomers,
     getStylists,

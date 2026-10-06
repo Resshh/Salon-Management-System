@@ -4,7 +4,8 @@ const router = express.Router();
 const {
     registerUser,
     loginUser,
-    createStylistUser
+    createStylistUser,
+    getMe
 } = require("../controllers/userController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -20,5 +21,7 @@ router.post(
     roleMiddleware("admin"),
     createStylistUser
 );
+
+router.get("/me", authMiddleware, getMe);
 
 module.exports = router;

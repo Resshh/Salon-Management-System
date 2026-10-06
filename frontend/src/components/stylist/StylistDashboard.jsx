@@ -1,6 +1,8 @@
 import StylistProfile from "./StylistProfile";
 import StylistAppointments from "./StylistAppointments";
 import StylistSchedule from "./StylistSchedule";
+import StylistHistory from "./StylistHistory";
+import StylistRatings from "./StylistRatings";
 import StylistNotification from "./StylistNotifications";
 
 function StylistDashboard() {
@@ -44,6 +46,13 @@ function StylistDashboard() {
                         className="cursor-pointer hover:text-[#5a182b]"
                     >
                         Appointments
+                    </a>
+
+                    <a
+                        href="#history"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
+                        History
                     </a>
 
                     <a
@@ -108,6 +117,16 @@ function StylistDashboard() {
             {/* ================= APPOINTMENTS ================= */}
 
             <StylistAppointments />
+
+
+            {/* ================= HISTORY ================= */}
+
+            <StylistHistory />
+
+
+            {/* ================= RATINGS ================= */}
+
+            <StylistRatings />
 
 
             {/* ================= NOTIFICATIONS ================= */}

@@ -42,9 +42,40 @@ const appointmentSchema = new mongoose.Schema(
                 "approved",
                 "rejected",
                 "cancelled",
-                "completed"
+                "completed",
+                "no-show"
             ],
             default: "pending"
+        },
+
+        // ---------- PAYMENT ----------
+
+        paymentStatus: {
+            type: String,
+            enum: ["unpaid", "paid"],
+            default: "unpaid"
+        },
+
+        // Final amount paid, after discounts
+        amount: {
+            type: Number
+        },
+
+        discount: {
+            type: Number,
+            default: 0
+        },
+
+        couponCode: {
+            type: String
+        },
+
+        razorpayOrderId: {
+            type: String
+        },
+
+        razorpayPaymentId: {
+            type: String
         }
     },
     { timestamps: true }

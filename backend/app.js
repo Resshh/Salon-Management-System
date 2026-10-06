@@ -18,6 +18,9 @@ const adminRoutes = require("./routes/adminRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const emailRoutes = require("./routes/emailRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
+const couponRoutes = require("./routes/couponRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const db = require('./connection');
 db();
@@ -39,6 +42,9 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/complaint", complaintRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/coupon", couponRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

@@ -6,6 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 
 const {
+    getStylistFeedback,
     createFeedback,
     getMyFeedback,
     getAllFeedback
@@ -38,5 +39,12 @@ router.get(
     getAllFeedback
 );
 
+
+router.get(
+    "/stylist",
+    authMiddleware,
+    roleMiddleware("stylist"),
+    getStylistFeedback
+);
 
 module.exports = router;

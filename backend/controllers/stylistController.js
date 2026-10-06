@@ -89,7 +89,12 @@ const getAllStylists = async (req, res) => {
             .populate("user", "name email phone")
             .populate("services", "name price duration");
 
-        res.status(200).json(stylists);
+        // Skip profiles whose user account was deleted
+        const activeStylists = stylists.filter(
+            (stylist) => stylist.user
+        );
+
+        res.status(200).json(activeStylists);
 
     } catch (error) {
         res.status(500).json({
@@ -116,20 +121,24 @@ const updateMyStylistProfile = async (req, res) => {
             });
         }
 
-        // Check services
-        for (const serviceId of services) {
-            const service = await Service.findById(serviceId);
+        // Check services (only when services are sent)
+        if (services) {
+            for (const serviceId of services) {
+                const service = await Service.findById(serviceId);
 
-            if (!service) {
-                return res.status(400).json({
-                    message: "One or more services not found"
-                });
+                if (!service) {
+                    return res.status(400).json({
+                        message: "One or more services not found"
+                    });
+                }
             }
         }
 
-        stylist.specialization = specialization;
-        stylist.services = services;
-        stylist.workingSchedule = workingSchedule;
+        // Update only the fields that were sent,
+        // so saving the profile does not erase the schedule (and vice versa)
+        stylist.specialization = specialization ?? stylist.specialization;
+        stylist.services = services ?? stylist.services;
+        stylist.workingSchedule = workingSchedule ?? stylist.workingSchedule;
 
         await stylist.save();
 
