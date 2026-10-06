@@ -135,6 +135,8 @@ function StylistProfile() {
                 }
             );
 
+            await getProfile();
+
             alert("Profile updated successfully.");
 
             setEditing(false);
