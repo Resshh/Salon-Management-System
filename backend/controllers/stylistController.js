@@ -83,6 +83,21 @@ const getMyStylistProfile = async (req, res) => {
     }
 };
 
+const getAllStylists = async (req, res) => {
+    try {
+        const stylists = await Stylist.find()
+            .populate("user", "name email phone")
+            .populate("services", "name price duration");
+
+        res.status(200).json(stylists);
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get stylists"
+        });
+    }
+};
+
 const updateMyStylistProfile = async (req, res) => {
     try {
         const user = req.user.userId;
@@ -133,5 +148,6 @@ const updateMyStylistProfile = async (req, res) => {
 module.exports = {
     createStylistProfile,
     getMyStylistProfile,
-    updateMyStylistProfile
+    updateMyStylistProfile,
+    getAllStylists
 };

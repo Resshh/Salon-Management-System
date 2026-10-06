@@ -1,51 +1,15 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import CustomerServices from "./CustomerServices";
+import CustomerStylists from "./CustomerStylists";
+import CustomerAppointments from "./CustomerAppointments";
+import CustomerNotifications from "./CustomerNotification";
 
 function CustomerDashboard() {
-
-    const [services, setServices] = useState([]);
-    const [stylists, setStylists] = useState([]);
-
-    useEffect(() => {
-        getServices();
-        getStylists();
-    }, []);
-
-    const getServices = async () => {
-        try {
-            const response = await axios.get(
-                "http://localhost:5000/api/service/"
-            );
-
-            setServices(response.data.services);
-        } catch (error) {
-            console.log(
-                error.response?.data?.message ||
-                "Failed to load services"
-            );
-        }
-    };
-
-    const getStylists = async () => {
-    try {
-        const response = await axios.get(
-            "http://localhost:5000/api/stylist/profile"
-        );
-
-        setStylists(response.data);
-
-    } catch (error) {
-        console.log(
-            error.response?.data?.message ||
-            "Failed to load stylists"
-        );
-    }
-};
 
     return (
         <div className="min-h-screen bg-[#f7efe5] text-[#321d1d]">
 
-            {/* Navbar */}
+            {/* ================= NAVBAR ================= */}
+
             <nav className="min-h-20 px-6 md:px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-5 border-b border-[#d8c6b6]">
 
                 <h1 className="text-3xl font-normal tracking-[5px] text-[#5a182b]">
@@ -54,27 +18,49 @@ function CustomerDashboard() {
 
                 <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-[#6e5545]">
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <a
+                        href="#home"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Home
-                    </span>
+                    </a>
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <a
+                        href="#services"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Services
-                    </span>
+                    </a>
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <a
+                        href="#stylists"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Stylists
-                    </span>
+                    </a>
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <a
+                        href="#appointments"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Appointments
-                    </span>
+                    </a>
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <a
+                        href="#notifications"
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Notifications
-                    </span>
+                    </a>
 
-                    <span className="cursor-pointer hover:text-[#5a182b]">
+                    <span
+                        onClick={() => {
+                            localStorage.removeItem("token");
+                            localStorage.removeItem("role");
+                            window.location.href = "/login";
+                        }}
+                        className="cursor-pointer hover:text-[#5a182b]"
+                    >
                         Logout
                     </span>
 
@@ -83,8 +69,12 @@ function CustomerDashboard() {
             </nav>
 
 
-            {/* Hero Section */}
-            <section className="px-6 md:px-20 py-20 md:py-28">
+            {/* ================= HERO ================= */}
+
+            <section
+                id="home"
+                className="px-6 md:px-20 py-20 md:py-28"
+            >
 
                 <p className="text-xs tracking-[4px] text-[#9a7b62]">
                     WELCOME TO BEAUTÉ
@@ -102,82 +92,34 @@ function CustomerDashboard() {
                     look and feel your best.
                 </p>
 
-                <button className="mt-7 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]">
+                <a
+                    href="#services"
+                    className="inline-block mt-7 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                >
                     EXPLORE SERVICES
-                </button>
+                </a>
 
             </section>
 
 
-            {/* Services Section */}
-            <section className="bg-[#efe2d5] px-6 md:px-20 py-16 md:py-20">
+            {/* ================= SERVICES ================= */}
 
-                <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                    WHAT WE OFFER
-                </p>
-
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
-                    Our Services
-                </h2>
-
-                <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {services.map((service) => (
-
-                        <div
-                            key={service._id}
-                            className="border border-[#d8c6b6] bg-[#f7efe5] p-8"
-                        >
-
-                            <h3 className="text-2xl font-normal text-[#5a182b]">
-                                {service.name}
-                            </h3>
-
-                            <p className="mt-4 text-[#6e5545]">
-                                {service.description}
-                            </p>
-
-                            <p className="mt-4 text-[#5a182b]">
-                                ₹{service.price}
-                            </p>
-
-                            <p className="mt-2 text-sm text-[#8b6d57]">
-                                {service.duration} minutes
-                            </p>
-
-                        </div>
-
-                    ))}
-
-                </div>
-
-            </section>
+            <CustomerServices />
 
 
-            {/* Appointment Section */}
-            <section className="px-6 md:px-20 py-16 md:py-20">
+            {/* ================= STYLISTS ================= */}
 
-                <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                    YOUR APPOINTMENT
-                </p>
+            <CustomerStylists />
 
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
-                    Upcoming Appointment
-                </h2>
 
-                <div className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-8">
+            {/* ================= APPOINTMENTS ================= */}
 
-                    <p className="text-[#6e5545]">
-                        No upcoming appointments
-                    </p>
+            <CustomerAppointments />
 
-                    <button className="mt-5 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]">
-                        BOOK APPOINTMENT
-                    </button>
 
-                </div>
+            {/* ================= NOTIFICATIONS ================= */}
 
-            </section>
+            <CustomerNotifications />
 
         </div>
     );

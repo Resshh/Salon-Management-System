@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    createStylistProfile, getMyStylistProfile, updateMyStylistProfile
+    createStylistProfile, getMyStylistProfile, getAllStylists, updateMyStylistProfile
 } = require("../controllers/stylistController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -25,5 +25,11 @@ router.put(
     authMiddleware,
     roleMiddleware("stylist"),
     updateMyStylistProfile
+);
+router.get(
+    "/",
+    authMiddleware,
+    roleMiddleware("customer"),
+    getAllStylists
 );
 module.exports = router;
