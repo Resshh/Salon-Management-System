@@ -14,7 +14,9 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes")
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const serviceHistoryRoutes = require("./routes/serviceHistoryRoutes");
-
+const adminRoutes = require("./routes/adminRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const db = require('./connection');
 db();
@@ -32,6 +34,9 @@ app.use("/api/appointment", appointmentRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/history", serviceHistoryRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/complaint", complaintRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
