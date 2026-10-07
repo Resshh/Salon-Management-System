@@ -11,7 +11,6 @@ const db = require("./connection");
 
 const User = require("./models/userModel");
 const Stylist = require("./models/stylistModel");
-const Category = require("./models/categoryModel");
 const Service = require("./models/serviceModel");
 const Appointment = require("./models/appointmentModel");
 const ServiceHistory = require("./models/serviceHistoryModel");
@@ -29,19 +28,17 @@ const PASSWORD = "Test@123";
 // TEST DATA
 // ======================================================
 
-const categories = ["Hair", "Skin", "Nails", "Makeup", "Spa"];
-
 const services = [
-    { name: "Hair Cut", category: "Hair", duration: 45, price: 500, description: "Professional haircut and styling" },
-    { name: "Hair Colouring", category: "Hair", duration: 120, price: 2500, description: "Full hair colour with premium products" },
-    { name: "Hair Spa", category: "Hair", duration: 60, price: 1200, description: "Deep conditioning treatment for soft hair" },
-    { name: "Classic Facial", category: "Skin", duration: 60, price: 1500, description: "Cleansing, scrub, massage and face pack" },
-    { name: "Clean Up", category: "Skin", duration: 30, price: 700, description: "Quick skin cleansing and refresh" },
-    { name: "Manicure", category: "Nails", duration: 45, price: 600, description: "Nail shaping, cuticle care and polish" },
-    { name: "Pedicure", category: "Nails", duration: 60, price: 800, description: "Foot soak, scrub, nail care and polish" },
-    { name: "Party Makeup", category: "Makeup", duration: 90, price: 3000, description: "Full face makeup for parties and events" },
-    { name: "Bridal Makeup", category: "Makeup", duration: 180, price: 12000, description: "Complete bridal look with hairstyling" },
-    { name: "Head Massage", category: "Spa", duration: 30, price: 400, description: "Relaxing oil head massage" }
+    { name: "Hair Cut", duration: 45, price: 500, description: "Professional haircut and styling" },
+    { name: "Hair Colouring", duration: 120, price: 2500, description: "Full hair colour with premium products" },
+    { name: "Hair Spa", duration: 60, price: 1200, description: "Deep conditioning treatment for soft hair" },
+    { name: "Classic Facial", duration: 60, price: 1500, description: "Cleansing, scrub, massage and face pack" },
+    { name: "Clean Up", duration: 30, price: 700, description: "Quick skin cleansing and refresh" },
+    { name: "Manicure", duration: 45, price: 600, description: "Nail shaping, cuticle care and polish" },
+    { name: "Pedicure", duration: 60, price: 800, description: "Foot soak, scrub, nail care and polish" },
+    { name: "Party Makeup", duration: 90, price: 3000, description: "Full face makeup for parties and events" },
+    { name: "Bridal Makeup", duration: 180, price: 12000, description: "Complete bridal look with hairstyling" },
+    { name: "Head Massage", duration: 30, price: 400, description: "Relaxing oil head massage" }
 ];
 
 const stylists = [
@@ -145,23 +142,6 @@ const seed = async () => {
         const hashedPassword = await bcrypt.hash(PASSWORD, 10);
 
 
-        // ---------- CATEGORIES ----------
-
-        const categoryIds = {};
-
-        for (const name of categories) {
-
-            let category = await Category.findOne({ name });
-
-            if (!category) {
-                category = await Category.create({ name });
-            }
-
-            categoryIds[name] = category._id;
-
-        }
-
-
         // ---------- SERVICES ----------
 
         const serviceDocs = {};
@@ -176,8 +156,7 @@ const seed = async () => {
                     name: item.name,
                     description: item.description,
                     duration: item.duration,
-                    price: item.price,
-                    category: categoryIds[item.category]
+                    price: item.price
                 });
 
             }
@@ -356,6 +335,7 @@ const seed = async () => {
                     endTime: addMinutes(item.time, service.duration),
                     status: item.status,
                     paymentStatus: item.paid ? "paid" : "unpaid",
+                    paymentMethod: item.paid ? "cash" : undefined,
                     amount: item.paid ? service.price : undefined
                 });
 
@@ -432,7 +412,6 @@ const seed = async () => {
 
         console.log("");
         console.log("Seed finished. Everything in the database now:");
-        console.log("  Categories   :", await Category.countDocuments());
         console.log("  Services     :", await Service.countDocuments());
         console.log("  Stylists     :", await Stylist.countDocuments());
         console.log("  Customers    :", await User.countDocuments({ role: "customer" }));

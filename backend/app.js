@@ -1,4 +1,5 @@
 const express = require('express');
+const http = require('http');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
@@ -7,7 +8,6 @@ const port = process.env.PORT || 5000;
 
 
 const userRoutes = require("./routes/userRoutes");
-const categoryRoutes = require("./routes/categoryRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const stylistRoutes = require("./routes/stylistRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
@@ -17,21 +17,27 @@ const serviceHistoryRoutes = require("./routes/serviceHistoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-const emailRoutes = require("./routes/emailRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+
+const { initSocket } = require('./utils/socket');
 
 const db = require('./connection');
 db();
 
 
 app.use(cors())
-app.use(express.json());
+// "verify" keeps a copy of the raw request body.
+// The Razorpay webhook needs it to check the signature.
+app.use(express.json({
+    verify: (req, res, buffer) => {
+        req.rawBody = buffer;
+    }
+}));
 app.use(express.urlencoded({ extended: true }))
 
 app.use("/api/user", userRoutes);
-app.use("/api/category", categoryRoutes);
 app.use("/api/service", serviceRoutes);
 app.use("/api/stylist", stylistRoutes);
 app.use("/api/appointment", appointmentRoutes);
@@ -41,12 +47,17 @@ app.use("/api/history", serviceHistoryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/complaint", complaintRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/email", emailRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/coupon", couponRoutes);
 app.use("/api/payment", paymentRoutes);
 
-app.listen(port, () => {
+// Socket.IO needs the plain HTTP server, so we create it ourselves
+// and let both Express (the API) and Socket.IO (live notifications) use it
+const server = http.createServer(app);
+
+initSocket(server);
+
+server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 })
 

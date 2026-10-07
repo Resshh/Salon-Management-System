@@ -1,5 +1,7 @@
 # Docs and notes stay local, never pushed
 *.md
+# ...except the project README, which is meant to be seen on GitHub
+!/README.md
 docs/
 
 # Claude Code local settings

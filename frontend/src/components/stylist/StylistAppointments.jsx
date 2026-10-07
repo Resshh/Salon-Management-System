@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import ConfirmBox from "../ConfirmBox";
 
 function StylistAppointments() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -70,16 +78,21 @@ function StylistAppointments() {
                 }
             );
 
-            alert("Appointment approved.");
+            setMessage({
+                type: "success",
+                text: "Appointment approved."
+            });
 
             getAppointments();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to approve appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to approve appointment"
+            });
 
         }
 
@@ -88,15 +101,18 @@ function StylistAppointments() {
 
     // ================= REJECT =================
 
-    const rejectAppointment = async (id) => {
+    const rejectAppointment = (id) => {
 
-        const confirmReject = window.confirm(
-            "Are you sure you want to reject this appointment?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Are you sure you want to reject this appointment?",
+            onYes: () => rejectAppointmentConfirmed(id)
+        });
 
-        if (!confirmReject) {
-            return;
-        }
+    };
+
+
+    const rejectAppointmentConfirmed = async (id) => {
 
         try {
 
@@ -110,16 +126,21 @@ function StylistAppointments() {
                 }
             );
 
-            alert("Appointment rejected.");
+            setMessage({
+                type: "success",
+                text: "Appointment rejected."
+            });
 
             getAppointments();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to reject appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to reject appointment"
+            });
 
         }
 
@@ -128,15 +149,18 @@ function StylistAppointments() {
 
     // ================= COMPLETE =================
 
-    const completeAppointment = async (id) => {
+    const completeAppointment = (id) => {
 
-        const confirmComplete = window.confirm(
-            "Mark this appointment as completed?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Mark this appointment as completed?",
+            onYes: () => completeAppointmentConfirmed(id)
+        });
 
-        if (!confirmComplete) {
-            return;
-        }
+    };
+
+
+    const completeAppointmentConfirmed = async (id) => {
 
         try {
 
@@ -150,16 +174,21 @@ function StylistAppointments() {
                 }
             );
 
-            alert("Appointment completed.");
+            setMessage({
+                type: "success",
+                text: "Appointment completed."
+            });
 
             getAppointments();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to complete appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to complete appointment"
+            });
 
         }
 
@@ -168,15 +197,18 @@ function StylistAppointments() {
 
     // ================= NO-SHOW =================
 
-    const markNoShow = async (id) => {
+    const markNoShow = (id) => {
 
-        const confirmNoShow = window.confirm(
-            "Mark this appointment as no-show (customer did not come)?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Mark this appointment as no-show (customer did not come)?",
+            onYes: () => markNoShowConfirmed(id)
+        });
 
-        if (!confirmNoShow) {
-            return;
-        }
+    };
+
+
+    const markNoShowConfirmed = async (id) => {
 
         try {
 
@@ -194,12 +226,79 @@ function StylistAppointments() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to mark no-show"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to mark no-show"
+            });
 
         }
+
+    };
+
+
+    // ================= PAID IN CASH AT THE SALON =================
+
+    const markCashPaid = (appointment) => {
+
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: `Mark this appointment as paid in cash (₹${appointment.service?.price})?`,
+            onYes: () => markCashPaidConfirmed(appointment._id)
+        });
+
+    };
+
+
+    const markCashPaidConfirmed = async (id) => {
+
+        try {
+
+            await axios.put(
+                `http://localhost:5000/api/payment/${id}/cash`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            setMessage({
+                type: "success",
+                text: "Marked as paid in cash."
+            });
+
+            getAppointments();
+
+        } catch (error) {
+
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to mark cash payment"
+            });
+
+        }
+
+    };
+
+
+    // ================= PAYMENT TEXT =================
+
+    const getPaymentText = (appointment) => {
+
+        if (appointment.paymentStatus === "paid") {
+            return `Paid ₹${appointment.amount} (${appointment.paymentMethod || "online"})`;
+        }
+
+        if (appointment.paymentStatus === "refunded") {
+            return `Refunded ₹${appointment.amount}`;
+        }
+
+        return "Unpaid";
 
     };
 
@@ -224,10 +323,12 @@ function StylistAppointments() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to load customer history"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to load customer history"
+            });
 
         }
 
@@ -506,6 +607,17 @@ function StylistAppointments() {
                                             {appointment.endTime}
 
                                         </p>
+                                        {/* Payment */}
+
+                                        <p className="mt-1 text-[#6e5545]">
+
+                                            <span className="text-[#9a7b62]">
+                                                Payment:
+                                            </span>{" "}
+
+                                            {getPaymentText(appointment)}
+
+                                        </p>
 
 
                                         {/* Price */}
@@ -605,6 +717,23 @@ function StylistAppointments() {
 
                                         )}
 
+                                        {(appointment.status === "approved" ||
+                                            appointment.status === "completed") &&
+                                            appointment.paymentStatus === "unpaid" && (
+
+                                                <button
+                                                    onClick={() =>
+                                                        markCashPaid(
+                                                            appointment
+                                                        )
+                                                    }
+                                                    className="mt-3 block border border-[#5a182b] px-5 py-3 text-sm tracking-[1px] text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                                >
+                                                    PAID IN CASH
+                                                </button>
+
+                                            )}
+
                                         {appointment.customer && (
 
                                             <button
@@ -643,6 +772,16 @@ function StylistAppointments() {
                 </div>
 
             )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

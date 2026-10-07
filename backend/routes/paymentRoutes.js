@@ -3,7 +3,9 @@ const router = express.Router();
 
 const {
     createOrder,
-    verifyPayment
+    verifyPayment,
+    razorpayWebhook,
+    markCashPayment
 } = require("../controllers/paymentController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -21,6 +23,17 @@ router.post(
     authMiddleware,
     roleMiddleware("customer"),
     verifyPayment
+);
+
+// Called by Razorpay's server, so there is no login token.
+// The controller checks Razorpay's signature instead.
+router.post("/webhook", razorpayWebhook);
+
+router.put(
+    "/:id/cash",
+    authMiddleware,
+    roleMiddleware("stylist", "admin"),
+    markCashPayment
 );
 
 module.exports = router;

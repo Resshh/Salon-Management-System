@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
 
 function StylistProfile() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
     const [profile, setProfile] = useState(null);
     const [services, setServices] = useState([]);
@@ -140,7 +144,10 @@ function StylistProfile() {
 
             await getProfile();
 
-            alert("Profile updated successfully.");
+            setMessage({
+                type: "success",
+                text: "Profile updated successfully."
+            });
 
             setEditing(false);
 
@@ -148,10 +155,12 @@ function StylistProfile() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update profile"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update profile"
+            });
 
         }
 
@@ -398,6 +407,11 @@ function StylistProfile() {
                 </form>
 
             )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

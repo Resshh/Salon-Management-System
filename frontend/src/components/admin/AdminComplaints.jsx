@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
 
 function AdminComplaints() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Complaint being answered (null = box hidden)
+    const [respondingComplaint, setRespondingComplaint] = useState(null);
+    const [responseText, setResponseText] = useState("");
 
     const [complaints, setComplaints] = useState([]);
 
@@ -62,10 +71,12 @@ function AdminComplaints() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update complaint"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update complaint"
+            });
 
         }
 
@@ -76,19 +87,22 @@ function AdminComplaints() {
 
     const writeResponse = (complaint) => {
 
-        const adminResponse = window.prompt(
-            "Enter your response to the customer:",
-            complaint.adminResponse || ""
-        );
+        // Open the response box with the current response filled in
+        setResponseText(complaint.adminResponse || "");
+        setRespondingComplaint(complaint);
 
-        // prompt gives null when the user clicks Cancel
-        if (adminResponse === null) {
-            return;
-        }
+    };
 
-        updateComplaint(complaint._id, {
-            adminResponse: adminResponse
+
+    const saveResponse = (e) => {
+
+        e.preventDefault();
+
+        updateComplaint(respondingComplaint._id, {
+            adminResponse: responseText
         });
+
+        setRespondingComplaint(null);
 
     };
 
@@ -199,6 +213,46 @@ function AdminComplaints() {
                 </p>
 
             )}
+
+            {/* ================= RESPONSE BOX ================= */}
+
+            {respondingComplaint && (
+
+                <Modal
+                    title="Respond to complaint"
+                    onClose={() => setRespondingComplaint(null)}
+                >
+
+                    <form onSubmit={saveResponse}>
+
+                        <label className="text-sm text-[#6e5545]">
+                            Your response to {respondingComplaint.customer?.name || "the customer"}
+                        </label>
+
+                        <textarea
+                            value={responseText}
+                            onChange={(e) => setResponseText(e.target.value)}
+                            rows="4"
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE RESPONSE
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

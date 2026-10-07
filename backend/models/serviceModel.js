@@ -24,12 +24,6 @@ const serviceSchema = new mongoose.Schema(
             required: true
         },
 
-        category: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Category",
-            required: true
-        },
-
         availability: {
             type: Boolean,
             default: true

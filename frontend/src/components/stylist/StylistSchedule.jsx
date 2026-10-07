@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
 
 const DAYS = [
     "Monday",
@@ -14,6 +15,9 @@ const DAYS = [
 function StylistSchedule() {
 
     // One row per day: { day, working, startTime, endTime }
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -117,7 +121,10 @@ function StylistSchedule() {
         for (const item of workingDays) {
 
             if (item.startTime >= item.endTime) {
-                alert(`End time must be after start time on ${item.day}.`);
+                setMessage({
+                    type: "error",
+                    text: `End time must be after start time on ${item.day}.`
+                });
                 return;
             }
 
@@ -143,16 +150,21 @@ function StylistSchedule() {
                 }
             );
 
-            alert("Schedule saved successfully.");
+            setMessage({
+                type: "success",
+                text: "Schedule saved successfully."
+            });
 
             getSchedule();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to save schedule"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to save schedule"
+            });
 
         }
 
@@ -295,6 +307,11 @@ function StylistSchedule() {
                 </form>
 
             )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

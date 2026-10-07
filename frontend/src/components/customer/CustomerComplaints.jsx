@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
 
 function CustomerComplaints() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
     const [complaints, setComplaints] = useState([]);
 
@@ -51,7 +55,10 @@ function CustomerComplaints() {
         e.preventDefault();
 
         if (!subject.trim() || !description.trim()) {
-            alert("Please enter a subject and a description.");
+            setMessage({
+                type: "error",
+                text: "Please enter a subject and a description."
+            });
             return;
         }
 
@@ -70,7 +77,10 @@ function CustomerComplaints() {
                 }
             );
 
-            alert("Complaint submitted.");
+            setMessage({
+                type: "success",
+                text: "Complaint submitted."
+            });
 
             setSubject("");
             setDescription("");
@@ -79,10 +89,12 @@ function CustomerComplaints() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to submit complaint"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to submit complaint"
+            });
 
         }
 
@@ -213,6 +225,11 @@ function CustomerComplaints() {
                 ))}
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

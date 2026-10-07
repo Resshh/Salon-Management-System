@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
 
 function StylistHistory() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // History item whose notes are being edited (null = box hidden)
+    const [editingItem, setEditingItem] = useState(null);
+    const [notesText, setNotesText] = useState("");
 
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -48,24 +57,25 @@ function StylistHistory() {
 
     // ================= ADD / EDIT NOTES =================
 
-    const editNotes = async (item) => {
+    const editNotes = (item) => {
 
-        const notes = window.prompt(
-            "Enter notes for this service:",
-            item.notes || ""
-        );
+        // Open the notes box with the current notes filled in
+        setNotesText(item.notes || "");
+        setEditingItem(item);
 
-        // prompt gives null when the user clicks Cancel
-        if (notes === null) {
-            return;
-        }
+    };
+
+
+    const saveNotes = async (e) => {
+
+        e.preventDefault();
 
         try {
 
             await axios.put(
-                `http://localhost:5000/api/history/${item._id}/notes`,
+                `http://localhost:5000/api/history/${editingItem._id}/notes`,
                 {
-                    notes: notes
+                    notes: notesText
                 },
                 {
                     headers: {
@@ -74,14 +84,23 @@ function StylistHistory() {
                 }
             );
 
+            setEditingItem(null);
+
+            setMessage({
+                type: "success",
+                text: "Notes saved."
+            });
+
             getHistory();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to save notes"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to save notes"
+            });
 
         }
 
@@ -207,6 +226,46 @@ function StylistHistory() {
                 </div>
 
             )}
+
+            {/* ================= NOTES BOX ================= */}
+
+            {editingItem && (
+
+                <Modal
+                    title="Service notes"
+                    onClose={() => setEditingItem(null)}
+                >
+
+                    <form onSubmit={saveNotes}>
+
+                        <label className="text-sm text-[#6e5545]">
+                            Notes for {editingItem.customer?.name || "this customer"}
+                        </label>
+
+                        <textarea
+                            value={notesText}
+                            onChange={(e) => setNotesText(e.target.value)}
+                            rows="4"
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE NOTES
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

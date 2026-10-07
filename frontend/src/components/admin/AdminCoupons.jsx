@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminCoupons() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [coupons, setCoupons] = useState([]);
 
@@ -52,7 +60,10 @@ function AdminCoupons() {
         e.preventDefault();
 
         if (!code || !discountPercent || !expiryDate) {
-            alert("Please fill all coupon details.");
+            setMessage({
+                type: "error",
+                text: "Please fill all coupon details."
+            });
             return;
         }
 
@@ -80,10 +91,12 @@ function AdminCoupons() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to add coupon"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to add coupon"
+            });
 
         }
 
@@ -112,10 +125,12 @@ function AdminCoupons() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update coupon"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update coupon"
+            });
 
         }
 
@@ -124,15 +139,18 @@ function AdminCoupons() {
 
     // ================= DELETE COUPON =================
 
-    const deleteCoupon = async (id) => {
+    const deleteCoupon = (id) => {
 
-        const confirmDelete = window.confirm(
-            "Are you sure you want to delete this coupon?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Are you sure you want to delete this coupon?",
+            onYes: () => deleteCouponConfirmed(id)
+        });
 
-        if (!confirmDelete) {
-            return;
-        }
+    };
+
+
+    const deleteCouponConfirmed = async (id) => {
 
         try {
 
@@ -149,10 +167,12 @@ function AdminCoupons() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to delete coupon"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to delete coupon"
+            });
 
         }
 
@@ -287,6 +307,16 @@ function AdminCoupons() {
                 )}
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

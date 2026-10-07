@@ -1,7 +1,7 @@
 import CustomerServices from "./CustomerServices";
 import CustomerStylists from "./CustomerStylists";
 import CustomerAppointments from "./CustomerAppointments";
-import CustomerNotifications from "./CustomerNotification";
+import NotificationBell from "../NotificationBell";
 import CustomerHistory from "./CustomerHistory";
 import CustomerFeedback from "./CustomerFeedback";
 import CustomerComplaints from "./CustomerComplaints";
@@ -71,12 +71,7 @@ function CustomerDashboard() {
                         Complaints
                     </a>
 
-                    <a
-                        href="#notifications"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Notifications
-                    </a>
+                    <NotificationBell />
 
                     <span
                         onClick={() => {
@@ -159,11 +154,6 @@ function CustomerDashboard() {
             {/* ================= COMPLAINTS ================= */}
 
             <CustomerComplaints />
-
-
-            {/* ================= NOTIFICATIONS ================= */}
-
-            <CustomerNotifications />
 
         </div>
     );

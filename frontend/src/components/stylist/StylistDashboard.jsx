@@ -3,7 +3,7 @@ import StylistAppointments from "./StylistAppointments";
 import StylistSchedule from "./StylistSchedule";
 import StylistHistory from "./StylistHistory";
 import StylistRatings from "./StylistRatings";
-import StylistNotification from "./StylistNotifications";
+import NotificationBell from "../NotificationBell";
 
 function StylistDashboard() {
 
@@ -55,12 +55,7 @@ function StylistDashboard() {
                         History
                     </a>
 
-                    <a
-                        href="#notifications"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Notifications
-                    </a>
+                    <NotificationBell />
 
                     <span
                         onClick={() => {
@@ -127,11 +122,6 @@ function StylistDashboard() {
             {/* ================= RATINGS ================= */}
 
             <StylistRatings />
-
-
-            {/* ================= NOTIFICATIONS ================= */}
-
-            <StylistNotification />
 
         </div>
     );

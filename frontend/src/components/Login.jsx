@@ -1,7 +1,12 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
+import Message from "./Message";
 
 function Login() {
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -27,9 +32,10 @@ function Login() {
             window.location.href = `/${response.data.role}`;
 
         } catch (error) {
-            alert(
-                error.response?.data?.message || "Login failed"
-            );
+            setMessage({
+                type: "error",
+                text: error.response?.data?.message || "Login failed"
+            });
         }
     };
 
@@ -103,12 +109,20 @@ function Login() {
 
                     <p className="register-text">
                         Don't have an account?
-                        <span> Register</span>
+                        {" "}
+                        <Link to="/register">
+                            <span>Register</span>
+                        </Link>
                     </p>
 
                 </div>
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </div>
     );

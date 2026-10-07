@@ -1,33 +1,51 @@
 import { useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminNotify() {
 
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
+
+    // The notification the admin is writing
     const [title, setTitle] = useState("");
-    const [message, setMessage] = useState("");
+    const [body, setBody] = useState("");
+
     const [sending, setSending] = useState(false);
 
     const token = localStorage.getItem("token");
 
 
-    // ================= SEND TO ALL CUSTOMERS =================
+    // ================= CHECK THE FORM, THEN ASK =================
 
-    const sendNotification = async (e) => {
+    const sendNotification = (e) => {
 
         e.preventDefault();
 
-        if (!title.trim() || !message.trim()) {
-            alert("Please enter a title and a message.");
+        if (!title.trim() || !body.trim()) {
+            setMessage({
+                type: "error",
+                text: "Please enter a title and a message."
+            });
             return;
         }
 
-        const confirmSend = window.confirm(
-            "Send this notification and email to ALL customers?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Send this notification and email to ALL customers?",
+            onYes: () => sendNotificationConfirmed()
+        });
 
-        if (!confirmSend) {
-            return;
-        }
+    };
+
+
+    // ================= SEND TO ALL CUSTOMERS =================
+
+    const sendNotificationConfirmed = async () => {
 
         try {
 
@@ -37,7 +55,7 @@ function AdminNotify() {
                 "http://localhost:5000/api/admin/notify",
                 {
                     title: title,
-                    message: message
+                    message: body
                 },
                 {
                     headers: {
@@ -46,17 +64,22 @@ function AdminNotify() {
                 }
             );
 
-            alert(response.data.message);
+            setMessage({
+                type: "success",
+                text: response.data.message
+            });
 
             setTitle("");
-            setMessage("");
+            setBody("");
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to send notification"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to send notification"
+            });
 
         } finally {
 
@@ -107,8 +130,8 @@ function AdminNotify() {
                 </label>
 
                 <textarea
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
                     rows="4"
                     placeholder="Example: Use code FESTIVE20 for 20% off this week."
                     className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
@@ -123,6 +146,16 @@ function AdminNotify() {
                 </button>
 
             </form>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

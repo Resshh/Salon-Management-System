@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Message from "./Message";
 
 function Register() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -32,16 +36,22 @@ function Register() {
 
             console.log(response.data);
 
-            alert("Registration successful");
+            setMessage({
+                type: "success",
+                text: "Registration successful"
+            });
 
-            navigate("/login");
+            // Give the user a moment to read the message, then open the login page
+            setTimeout(() => navigate("/login"), 1500);
 
         } catch (error) {
 
-            console.log(
-                error.response?.data?.message ||
-                "Registration failed"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Registration failed"
+            });
         }
     };
 
@@ -191,6 +201,11 @@ function Register() {
                 </div>
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </div>
     );

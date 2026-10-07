@@ -1,5 +1,4 @@
 const Service = require("../models/serviceModel");
-const Category = require("../models/categoryModel");
 
 const createService = async (req, res) => {
 
@@ -9,8 +8,7 @@ const createService = async (req, res) => {
             name,
             description,
             duration,
-            price,
-            category
+            price
         } = req.body;
 
         const existingService = await Service.findOne({ name });
@@ -21,20 +19,11 @@ const createService = async (req, res) => {
             });
         }
 
-        const existingCategory = await Category.findById(category);
-
-        if (!existingCategory) {
-            return res.status(400).json({
-                message: "Category not found"
-            });
-        }
-
         const newService = new Service({
             name,
             description,
             duration,
-            price,
-            category
+            price
         });
 
         await newService.save();
@@ -57,8 +46,7 @@ const getAllServices = async (req, res) => {
 
     try {
 
-        const services = await Service.find()
-            .populate("category", "name");
+        const services = await Service.find();
 
         return res.status(200).json({
             message: "Services fetched successfully",
@@ -87,7 +75,6 @@ const updateService = async (req, res) => {
             description,
             duration,
             price,
-            category,
             availability
         } = req.body;
 
@@ -99,23 +86,10 @@ const updateService = async (req, res) => {
             });
         }
 
-        if (category) {
-
-            const existingCategory = await Category.findById(category);
-
-            if (!existingCategory) {
-                return res.status(400).json({
-                    message: "Category not found"
-                });
-            }
-
-        }
-
         service.name = name ?? service.name;
         service.description = description ?? service.description;
         service.duration = duration ?? service.duration;
         service.price = price ?? service.price;
-        service.category = category ?? service.category;
         service.availability = availability ?? service.availability;
 
         await service.save();
@@ -164,43 +138,7 @@ const deleteService = async (req, res) => {
     }
 };
 
-const getServicesByCategory = async (req, res) => {
-
-    try {
-
-        const { categoryId } = req.params;
-
-        const category = await Category.findById(categoryId);
-
-        if (!category) {
-            return res.status(404).json({
-                message: "Category not found"
-            });
-        }
-
-        const services = await Service.find({
-            category: categoryId,
-            availability: true
-        }).populate("category", "name");
-
-        return res.status(200).json({
-            message: "Services fetched successfully",
-            services: services
-        });
-
-    } catch (error) {
-
-        return res.status(500).json({
-            message: "Failed to fetch services",
-            error: error.message
-        });
-
-    }
-};
-
-
-
 
 module.exports = {
-    createService, getAllServices,updateService,deleteService,getServicesByCategory
+    createService, getAllServices,updateService,deleteService
 };

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { createService, getAllServices, updateService, deleteService, getServicesByCategory } = require("../controllers/serviceController");
+const { createService, getAllServices, updateService, deleteService } = require("../controllers/serviceController");
 
 const authMiddleware = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
@@ -31,11 +31,6 @@ router.delete(
     authMiddleware,
     roleMiddleware("admin"),
     deleteService
-);
-
-router.get(
-    "/category/:categoryId",
-    getServicesByCategory
 );
 
 module.exports = router;

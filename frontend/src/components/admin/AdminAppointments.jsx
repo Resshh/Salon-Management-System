@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminAppointments() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Appointment being rescheduled (null = box hidden)
+    const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
+    const [newDate, setNewDate] = useState("");
+    const [newStartTime, setNewStartTime] = useState("");
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [appointments, setAppointments] = useState([]);
 
@@ -65,10 +79,12 @@ function AdminAppointments() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update appointment"
+            });
 
         }
 
@@ -79,13 +95,16 @@ function AdminAppointments() {
 
     const cancelAppointment = (id) => {
 
-        const confirmCancel = window.confirm(
-            "Cancel this appointment? The customer and stylist will be notified."
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Cancel this appointment? The customer and stylist will be notified, and an online payment is refunded.",
+            onYes: () => cancelAppointmentConfirmed(id)
+        });
 
-        if (!confirmCancel) {
-            return;
-        }
+    };
+
+
+    const cancelAppointmentConfirmed = (id) => {
 
         updateAppointment(id, {
             status: "cancelled"
@@ -98,37 +117,108 @@ function AdminAppointments() {
 
     const rescheduleAppointment = (appointment) => {
 
-        const date = window.prompt(
-            "Enter new date (YYYY-MM-DD):"
-        );
+        // Open the reschedule box with empty fields
+        setNewDate("");
+        setNewStartTime("");
+        setReschedulingAppointment(appointment);
 
-        if (!date) {
-            return;
-        }
+    };
 
-        const startTime = window.prompt(
-            "Enter new start time (HH:MM):"
-        );
 
-        if (!startTime) {
+    const saveReschedule = (e) => {
+
+        e.preventDefault();
+
+        if (!newDate || !newStartTime) {
+            setMessage({
+                type: "error",
+                text: "Please choose a new date and start time."
+            });
             return;
         }
 
         // End time = start time + service duration
-        const [hours, minutes] = startTime.split(":").map(Number);
+        const [hours, minutes] = newStartTime.split(":").map(Number);
 
-        const duration = appointment.service?.duration || 45;
+        const duration = reschedulingAppointment.service?.duration || 45;
 
         const totalMinutes = hours * 60 + minutes + duration;
 
         const endHours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
         const endMinutes = String(totalMinutes % 60).padStart(2, "0");
 
-        updateAppointment(appointment._id, {
-            date: date,
-            startTime: startTime,
+        updateAppointment(reschedulingAppointment._id, {
+            date: newDate,
+            startTime: newStartTime,
             endTime: `${endHours}:${endMinutes}`
         });
+
+        setReschedulingAppointment(null);
+
+    };
+
+
+    // ================= PAID IN CASH AT THE SALON =================
+
+    const markCashPaid = (appointment) => {
+
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: `Mark this appointment as paid in cash (₹${appointment.service?.price})?`,
+            onYes: () => markCashPaidConfirmed(appointment._id)
+        });
+
+    };
+
+
+    const markCashPaidConfirmed = async (id) => {
+
+        try {
+
+            await axios.put(
+                `http://localhost:5000/api/payment/${id}/cash`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            setMessage({
+                type: "success",
+                text: "Marked as paid in cash."
+            });
+
+            getAppointments();
+
+        } catch (error) {
+
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to mark cash payment"
+            });
+
+        }
+
+    };
+
+
+    // ================= PAYMENT TEXT =================
+
+    const getPaymentText = (appointment) => {
+
+        if (appointment.paymentStatus === "paid") {
+            return `Paid ₹${appointment.amount} (${appointment.paymentMethod || "online"})`;
+        }
+
+        if (appointment.paymentStatus === "refunded") {
+            return `Refunded ₹${appointment.amount}`;
+        }
+
+        return "Unpaid";
 
     };
 
@@ -228,11 +318,24 @@ function AdminAppointments() {
                                         {appointment.status}
                                     </td>
                                     <td className="p-4">
-                                        {appointment.paymentStatus === "paid"
-                                            ? `Paid ₹${appointment.amount}`
-                                            : "Unpaid"}
+                                        {getPaymentText(appointment)}
                                     </td>
                                     <td className="p-4">
+
+                                        {(appointment.status === "approved" ||
+                                            appointment.status === "completed") &&
+                                            appointment.paymentStatus === "unpaid" && (
+                                                <button
+                                                    onClick={() =>
+                                                        markCashPaid(
+                                                            appointment
+                                                        )
+                                                    }
+                                                    className="mr-3 text-[#5a182b] underline"
+                                                >
+                                                    Paid in cash
+                                                </button>
+                                            )}
 
                                         {appointment.status === "pending" && (
                                             <button
@@ -292,6 +395,68 @@ function AdminAppointments() {
                 </p>
 
             )}
+
+            {/* ================= RESCHEDULE BOX ================= */}
+
+            {reschedulingAppointment && (
+
+                <Modal
+                    title="Reschedule appointment"
+                    onClose={() => setReschedulingAppointment(null)}
+                >
+
+                    <form onSubmit={saveReschedule}>
+
+                        <p className="text-sm text-[#6e5545]">
+                            {reschedulingAppointment.service?.name}
+                            {" · "}
+                            {reschedulingAppointment.customer?.name}
+                        </p>
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            New date
+                        </label>
+
+                        <input
+                            type="date"
+                            value={newDate}
+                            onChange={(e) => setNewDate(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            New start time
+                        </label>
+
+                        <input
+                            type="time"
+                            value={newStartTime}
+                            onChange={(e) => setNewStartTime(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE NEW TIME
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

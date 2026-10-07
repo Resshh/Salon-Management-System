@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminServices() {
 
-    const [categories, setCategories] = useState([]);
-    const [services, setServices] = useState([]);
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
-    const [categoryName, setCategoryName] = useState("");
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
+
+    const [services, setServices] = useState([]);
 
     // Service form. editingId is empty when adding a new service.
     const [editingId, setEditingId] = useState("");
@@ -14,38 +19,12 @@ function AdminServices() {
     const [description, setDescription] = useState("");
     const [duration, setDuration] = useState("");
     const [price, setPrice] = useState("");
-    const [category, setCategory] = useState("");
 
     const token = localStorage.getItem("token");
 
     useEffect(() => {
-        getCategories();
         getServices();
     }, []);
-
-
-    // ================= GET CATEGORIES =================
-
-    const getCategories = async () => {
-
-        try {
-
-            const response = await axios.get(
-                "http://localhost:5000/api/category/"
-            );
-
-            setCategories(response.data.categories || []);
-
-        } catch (error) {
-
-            console.log(
-                error.response?.data?.message ||
-                "Failed to load categories"
-            );
-
-        }
-
-    };
 
 
     // ================= GET SERVICES =================
@@ -77,47 +56,6 @@ function AdminServices() {
     };
 
 
-    // ================= ADD CATEGORY =================
-
-    const addCategory = async (e) => {
-
-        e.preventDefault();
-
-        if (!categoryName.trim()) {
-            alert("Please enter a category name.");
-            return;
-        }
-
-        try {
-
-            await axios.post(
-                "http://localhost:5000/api/category/",
-                {
-                    name: categoryName
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
-
-            setCategoryName("");
-
-            getCategories();
-
-        } catch (error) {
-
-            alert(
-                error.response?.data?.message ||
-                "Failed to add category"
-            );
-
-        }
-
-    };
-
-
     // ================= CLEAR SERVICE FORM =================
 
     const clearForm = () => {
@@ -127,7 +65,6 @@ function AdminServices() {
         setDescription("");
         setDuration("");
         setPrice("");
-        setCategory("");
 
     };
 
@@ -138,8 +75,11 @@ function AdminServices() {
 
         e.preventDefault();
 
-        if (!name || !description || !duration || !price || !category) {
-            alert("Please fill all service details.");
+        if (!name || !description || !duration || !price) {
+            setMessage({
+                type: "error",
+                text: "Please fill all service details."
+            });
             return;
         }
 
@@ -147,8 +87,7 @@ function AdminServices() {
             name: name,
             description: description,
             duration: Number(duration),
-            price: Number(price),
-            category: category
+            price: Number(price)
         };
 
         try {
@@ -185,10 +124,12 @@ function AdminServices() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to save service"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to save service"
+            });
 
         }
 
@@ -205,7 +146,6 @@ function AdminServices() {
         setDescription(service.description);
         setDuration(service.duration);
         setPrice(service.price);
-        setCategory(service.category?._id || "");
 
     };
 
@@ -232,10 +172,12 @@ function AdminServices() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update service"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update service"
+            });
 
         }
 
@@ -244,15 +186,18 @@ function AdminServices() {
 
     // ================= DELETE SERVICE =================
 
-    const deleteService = async (id) => {
+    const deleteService = (id) => {
 
-        const confirmDelete = window.confirm(
-            "Are you sure you want to delete this service?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Are you sure you want to delete this service?",
+            onYes: () => deleteServiceConfirmed(id)
+        });
 
-        if (!confirmDelete) {
-            return;
-        }
+    };
+
+
+    const deleteServiceConfirmed = async (id) => {
 
         try {
 
@@ -269,10 +214,12 @@ function AdminServices() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to delete service"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to delete service"
+            });
 
         }
 
@@ -296,51 +243,8 @@ function AdminServices() {
             </p>
 
             <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
-                Categories &amp; Services
+                Services
             </h2>
-
-
-            {/* ================= CATEGORIES ================= */}
-
-            <div className="mt-8 border border-[#c9aa91] bg-[#efe2d5] p-8">
-
-                <h3 className="text-2xl text-[#5a182b]">
-                    Categories
-                </h3>
-
-                <p className="mt-3 text-[#6e5545]">
-                    {categories.length > 0
-                        ? categories
-                            .map((item) => item.name)
-                            .join(", ")
-                        : "No categories yet. Add one before adding services."}
-                </p>
-
-                <form
-                    onSubmit={addCategory}
-                    className="mt-5 flex flex-col md:flex-row gap-3"
-                >
-
-                    <input
-                        type="text"
-                        value={categoryName}
-                        onChange={(e) =>
-                            setCategoryName(e.target.value)
-                        }
-                        placeholder="New category name"
-                        className="flex-1 border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
-                    />
-
-                    <button
-                        type="submit"
-                        className="bg-[#5a182b] px-7 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
-                    >
-                        ADD CATEGORY
-                    </button>
-
-                </form>
-
-            </div>
 
 
             {/* ================= SERVICE FORM ================= */}
@@ -366,28 +270,6 @@ function AdminServices() {
                             onChange={(e) => setName(e.target.value)}
                             className={inputClass}
                         />
-                    </div>
-
-                    <div>
-                        <label className="text-sm text-[#6e5545]">
-                            Category
-                        </label>
-                        <select
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className={inputClass}
-                        >
-                            <option value="">Select category</option>
-
-                            {categories.map((item) => (
-                                <option
-                                    key={item._id}
-                                    value={item._id}
-                                >
-                                    {item.name}
-                                </option>
-                            ))}
-                        </select>
                     </div>
 
                     <div>
@@ -469,11 +351,7 @@ function AdminServices() {
                             className="border border-[#d8c6b6] bg-[#efe2d5] p-8"
                         >
 
-                            <p className="text-xs tracking-[2px] text-[#9a7b62]">
-                                {service.category?.name || "NO CATEGORY"}
-                            </p>
-
-                            <h3 className="mt-2 text-2xl font-normal text-[#5a182b]">
+                            <h3 className="text-2xl font-normal text-[#5a182b]">
                                 {service.name}
                             </h3>
 
@@ -533,6 +411,16 @@ function AdminServices() {
                 )}
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

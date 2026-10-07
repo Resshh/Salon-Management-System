@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
 
 function CustomerFeedback() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
     const [appointments, setAppointments] = useState([]);
     const [feedback, setFeedback] = useState([]);
@@ -88,7 +92,10 @@ function CustomerFeedback() {
         e.preventDefault();
 
         if (!selectedAppointment) {
-            alert("Please select an appointment.");
+            setMessage({
+                type: "error",
+                text: "Please select an appointment."
+            });
             return;
         }
 
@@ -108,7 +115,10 @@ function CustomerFeedback() {
                 }
             );
 
-            alert("Thank you for your feedback.");
+            setMessage({
+                type: "success",
+                text: "Thank you for your feedback."
+            });
 
             setSelectedAppointment("");
             setRating("5");
@@ -118,10 +128,12 @@ function CustomerFeedback() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to submit feedback"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to submit feedback"
+            });
 
         }
 
@@ -309,6 +321,11 @@ function CustomerFeedback() {
                 ))}
 
             </div>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

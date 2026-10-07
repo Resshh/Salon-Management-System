@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
 
 const DAYS = [
     "Monday",
@@ -12,6 +13,9 @@ const DAYS = [
 ];
 
 function AdminSettings() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
 
     const [openTime, setOpenTime] = useState("09:00");
     const [closeTime, setCloseTime] = useState("20:00");
@@ -82,7 +86,10 @@ function AdminSettings() {
     const addHoliday = () => {
 
         if (!holidayDate) {
-            alert("Please choose a holiday date.");
+            setMessage({
+                type: "error",
+                text: "Please choose a holiday date."
+            });
             return;
         }
 
@@ -131,16 +138,21 @@ function AdminSettings() {
                 }
             );
 
-            alert("Salon settings saved.");
+            setMessage({
+                type: "success",
+                text: "Salon settings saved."
+            });
 
             getSettings();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to save settings"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to save settings"
+            });
 
         }
 
@@ -290,6 +302,11 @@ function AdminSettings() {
                 </button>
 
             </form>
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
 
         </section>
     );

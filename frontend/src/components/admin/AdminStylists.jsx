@@ -1,7 +1,22 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminStylists() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Stylist being edited (null = box hidden)
+    const [editingStylist, setEditingStylist] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editPhone, setEditPhone] = useState("");
+    const [editSpecialization, setEditSpecialization] = useState("");
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [stylists, setStylists] = useState([]);
     const [showForm, setShowForm] = useState(false);
@@ -65,7 +80,10 @@ function AdminStylists() {
             !dateOfBirth ||
             !specialization
         ) {
-            alert("Please fill all stylist details.");
+            setMessage({
+                type: "error",
+                text: "Please fill all stylist details."
+            });
             return;
         }
 
@@ -89,7 +107,10 @@ function AdminStylists() {
                 }
             );
 
-            alert("Stylist added. They can now log in with this email and password.");
+            setMessage({
+                type: "success",
+                text: "Stylist added. They can now log in with this email and password."
+            });
 
             setName("");
             setEmail("");
@@ -105,10 +126,12 @@ function AdminStylists() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to add stylist"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to add stylist"
+            });
 
         }
 
@@ -117,43 +140,41 @@ function AdminStylists() {
 
     // ================= EDIT STYLIST =================
 
-    const editStylist = async (stylist) => {
+    const editStylist = (stylist) => {
 
-        const newName = window.prompt(
-            "Stylist name:",
-            stylist.user?.name || ""
-        );
+        // Open the edit box with the current values filled in
+        setEditName(stylist.user?.name || "");
+        setEditPhone(stylist.user?.phone || "");
+        setEditSpecialization(stylist.specialization || "");
+        setEditingStylist(stylist);
 
-        if (!newName) {
-            return;
-        }
+    };
 
-        const newPhone = window.prompt(
-            "Phone number:",
-            stylist.user?.phone || ""
-        );
 
-        if (!newPhone) {
-            return;
-        }
+    const saveStylist = async (e) => {
 
-        const newSpecialization = window.prompt(
-            "Specialization:",
-            stylist.specialization || ""
-        );
+        e.preventDefault();
 
-        if (!newSpecialization) {
+        if (
+            !editName.trim() ||
+            !editPhone.trim() ||
+            !editSpecialization.trim()
+        ) {
+            setMessage({
+                type: "error",
+                text: "Please fill name, phone and specialization."
+            });
             return;
         }
 
         try {
 
             await axios.put(
-                `http://localhost:5000/api/admin/users/${stylist.user._id}`,
+                `http://localhost:5000/api/admin/users/${editingStylist.user._id}`,
                 {
-                    name: newName,
-                    phone: newPhone,
-                    specialization: newSpecialization
+                    name: editName,
+                    phone: editPhone,
+                    specialization: editSpecialization
                 },
                 {
                     headers: {
@@ -162,14 +183,23 @@ function AdminStylists() {
                 }
             );
 
+            setEditingStylist(null);
+
+            setMessage({
+                type: "success",
+                text: "Stylist updated."
+            });
+
             getStylists();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update stylist"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update stylist"
+            });
 
         }
 
@@ -178,15 +208,18 @@ function AdminStylists() {
 
     // ================= DELETE STYLIST =================
 
-    const deleteStylist = async (stylist) => {
+    const deleteStylist = (stylist) => {
 
-        const confirmDelete = window.confirm(
-            `Delete stylist ${stylist.user?.name}? This cannot be undone.`
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: `Delete stylist ${stylist.user?.name}? This cannot be undone.`,
+            onYes: () => deleteStylistConfirmed(stylist)
+        });
 
-        if (!confirmDelete) {
-            return;
-        }
+    };
+
+
+    const deleteStylistConfirmed = async (stylist) => {
 
         try {
 
@@ -203,10 +236,12 @@ function AdminStylists() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to delete stylist"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to delete stylist"
+            });
 
         }
 
@@ -447,6 +482,73 @@ function AdminStylists() {
                 )}
 
             </div>
+
+            {/* ================= EDIT BOX ================= */}
+
+            {editingStylist && (
+
+                <Modal
+                    title="Edit stylist"
+                    onClose={() => setEditingStylist(null)}
+                >
+
+                    <form onSubmit={saveStylist}>
+
+                        <label className="text-sm text-[#6e5545]">
+                            Name
+                        </label>
+
+                        <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Phone
+                        </label>
+
+                        <input
+                            type="text"
+                            value={editPhone}
+                            onChange={(e) => setEditPhone(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Specialization
+                        </label>
+
+                        <input
+                            type="text"
+                            value={editSpecialization}
+                            onChange={(e) => setEditSpecialization(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE STYLIST
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

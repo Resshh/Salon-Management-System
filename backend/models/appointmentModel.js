@@ -52,8 +52,14 @@ const appointmentSchema = new mongoose.Schema(
 
         paymentStatus: {
             type: String,
-            enum: ["unpaid", "paid"],
+            enum: ["unpaid", "paid", "refunded"],
             default: "unpaid"
+        },
+
+        // How it was paid: on the website or at the salon
+        paymentMethod: {
+            type: String,
+            enum: ["online", "cash"]
         },
 
         // Final amount paid, after discounts
@@ -75,6 +81,10 @@ const appointmentSchema = new mongoose.Schema(
         },
 
         razorpayPaymentId: {
+            type: String
+        },
+
+        razorpayRefundId: {
             type: String
         }
     },

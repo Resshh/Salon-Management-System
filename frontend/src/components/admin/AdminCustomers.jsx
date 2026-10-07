@@ -1,7 +1,22 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
+import ConfirmBox from "../ConfirmBox";
 
 function AdminCustomers() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Customer being edited (null = box hidden)
+    const [editingCustomer, setEditingCustomer] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editPhone, setEditPhone] = useState("");
+    const [editPoints, setEditPoints] = useState("");
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [customers, setCustomers] = useState([]);
 
@@ -62,83 +77,78 @@ function AdminCustomers() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to update customer"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to update customer"
+            });
 
         }
 
     };
 
 
-    // ================= EDIT NAME AND PHONE =================
+    // ================= EDIT CUSTOMER =================
 
     const editCustomer = (customer) => {
 
-        const newName = window.prompt(
-            "Customer name:",
-            customer.name
-        );
-
-        if (!newName) {
-            return;
-        }
-
-        const newPhone = window.prompt(
-            "Phone number:",
-            customer.phone
-        );
-
-        if (!newPhone) {
-            return;
-        }
-
-        updateCustomer(customer._id, {
-            name: newName,
-            phone: newPhone
-        });
+        // Open the edit box with the current values filled in
+        setEditName(customer.name);
+        setEditPhone(customer.phone);
+        setEditPoints(customer.loyaltyPoints || 0);
+        setEditingCustomer(customer);
 
     };
 
 
-    // ================= EDIT LOYALTY POINTS =================
+    // ================= SAVE CUSTOMER =================
 
-    const editPoints = (customer) => {
+    const saveCustomer = (e) => {
 
-        const points = window.prompt(
-            "Loyalty points:",
-            customer.loyaltyPoints
-        );
+        e.preventDefault();
 
-        // Stop if cancelled, empty, not a number or negative
-        if (
-            points === null ||
-            points.trim() === "" ||
-            isNaN(points) ||
-            Number(points) < 0
-        ) {
+        if (!editName.trim() || !editPhone.trim()) {
+            setMessage({
+                type: "error",
+                text: "Please enter a name and a phone number."
+            });
             return;
         }
 
-        updateCustomer(customer._id, {
-            loyaltyPoints: Number(points)
+        if (editPoints === "" || Number(editPoints) < 0) {
+            setMessage({
+                type: "error",
+                text: "Loyalty points must be 0 or more."
+            });
+            return;
+        }
+
+        updateCustomer(editingCustomer._id, {
+            name: editName,
+            phone: editPhone,
+            loyaltyPoints: Number(editPoints)
         });
+
+        setEditingCustomer(null);
 
     };
 
 
     // ================= DELETE CUSTOMER =================
 
-    const deleteCustomer = async (customer) => {
+    const deleteCustomer = (customer) => {
 
-        const confirmDelete = window.confirm(
-            `Delete customer ${customer.name}? This cannot be undone.`
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: `Delete customer ${customer.name}? This cannot be undone.`,
+            onYes: () => deleteCustomerConfirmed(customer)
+        });
 
-        if (!confirmDelete) {
-            return;
-        }
+    };
+
+
+    const deleteCustomerConfirmed = async (customer) => {
 
         try {
 
@@ -155,10 +165,12 @@ function AdminCustomers() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to delete customer"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to delete customer"
+            });
 
         }
 
@@ -230,13 +242,7 @@ function AdminCustomers() {
                                         </select>
                                     </td>
                                     <td className="p-4">
-                                        {customer.loyaltyPoints || 0}{" "}
-                                        <button
-                                            onClick={() => editPoints(customer)}
-                                            className="ml-2 text-[#5a182b] underline"
-                                        >
-                                            Edit
-                                        </button>
+                                        {customer.loyaltyPoints || 0}
                                     </td>
                                     <td className="p-4">
                                         {new Date(
@@ -274,6 +280,74 @@ function AdminCustomers() {
                 </p>
 
             )}
+
+            {/* ================= EDIT BOX ================= */}
+
+            {editingCustomer && (
+
+                <Modal
+                    title="Edit customer"
+                    onClose={() => setEditingCustomer(null)}
+                >
+
+                    <form onSubmit={saveCustomer}>
+
+                        <label className="text-sm text-[#6e5545]">
+                            Name
+                        </label>
+
+                        <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Phone
+                        </label>
+
+                        <input
+                            type="text"
+                            value={editPhone}
+                            onChange={(e) => setEditPhone(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Loyalty points
+                        </label>
+
+                        <input
+                            type="number"
+                            min="0"
+                            value={editPoints}
+                            onChange={(e) => setEditPoints(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE CUSTOMER
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

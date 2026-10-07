@@ -2,6 +2,7 @@ const Notification = require("../models/notificationModel");
 const User = require("../models/userModel");
 
 const sendEmail = require("./emailService");
+const { sendToUser } = require("./socket");
 
 
 // ======================================================
@@ -23,12 +24,15 @@ const sendNotification = async ({
 
     try {
 
-        await Notification.create({
+        const notification = await Notification.create({
             recipient,
             title,
             message,
             type
         });
+
+        // Push it to the user's browser straight away (if they are online)
+        sendToUser(recipient, notification);
 
     } catch (error) {
 

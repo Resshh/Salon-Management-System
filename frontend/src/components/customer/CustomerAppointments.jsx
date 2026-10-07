@@ -1,7 +1,26 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Message from "../Message";
+import Modal from "../Modal";
+import ConfirmBox from "../ConfirmBox";
 
 function CustomerAppointments() {
+
+    // Success / error message shown at the top right
+    const [message, setMessage] = useState(null);
+
+    // Appointment being paid for (null = pay box hidden)
+    const [payingAppointment, setPayingAppointment] = useState(null);
+    const [couponCode, setCouponCode] = useState("");
+
+    // Appointment being rescheduled (null = reschedule box hidden)
+    const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
+    const [newDate, setNewDate] = useState("");
+    const [newStartTime, setNewStartTime] = useState("");
+    const [rescheduleSlots, setRescheduleSlots] = useState([]);
+
+    // Yes / no question box (null = hidden)
+    const [confirmBox, setConfirmBox] = useState(null);
 
     const [services, setServices] = useState([]);
     const [stylists, setStylists] = useState([]);
@@ -76,17 +95,23 @@ function CustomerAppointments() {
 
     // ================= PAY WITH RAZORPAY =================
 
-    const payAppointment = async (appointment) => {
+    const payAppointment = (appointment) => {
 
-        const couponCode = window.prompt(
-            "Enter a coupon code (leave empty if you do not have one):",
-            ""
-        );
+        // Open the pay box, where the customer can type a coupon code
+        setCouponCode("");
+        setPayingAppointment(appointment);
 
-        // prompt gives null when the user clicks Cancel
-        if (couponCode === null) {
-            return;
-        }
+    };
+
+
+    const startPayment = async (e) => {
+
+        e.preventDefault();
+
+        const appointment = payingAppointment;
+
+        // Close the pay box before the Razorpay window opens
+        setPayingAppointment(null);
 
         try {
 
@@ -129,16 +154,21 @@ function CustomerAppointments() {
                             }
                         );
 
-                        alert("Payment successful.");
+                        setMessage({
+                            type: "success",
+                            text: "Payment successful."
+                        });
 
                         getAppointments();
 
                     } catch (error) {
 
-                        alert(
-                            error.response?.data?.message ||
-                            "Payment verification failed"
-                        );
+                        setMessage({
+                            type: "error",
+                            text:
+                                error.response?.data?.message ||
+                                "Payment verification failed"
+                        });
 
                     }
 
@@ -151,10 +181,12 @@ function CustomerAppointments() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to start payment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to start payment"
+            });
 
         }
 
@@ -243,6 +275,40 @@ function CustomerAppointments() {
     };
 
 
+    // ================= STATUS TEXT =================
+
+    // After the stylist approves, the customer still has to pay.
+    // So an approved appointment has two possible texts.
+    const getStatusText = (appointment) => {
+
+        if (appointment.status === "approved") {
+
+            if (appointment.paymentStatus === "paid") {
+                return "Confirmed · paid";
+            }
+
+            return "Approved · payment pending";
+
+        }
+
+        return appointment.status;
+
+    };
+
+
+    // ================= SERVICES OF THE CHOSEN STYLIST =================
+
+    // The stylist list already contains each stylist's services,
+    // so the service dropdown only shows what the chosen stylist offers
+    const selectedStylistData = stylists.find(
+        (stylist) => stylist._id === selectedStylist
+    );
+
+    const stylistServices = selectedStylistData
+        ? selectedStylistData.services
+        : [];
+
+
     // ================= CALCULATE END TIME =================
 
     const calculateEndTime = (start, duration) => {
@@ -278,7 +344,10 @@ function CustomerAppointments() {
             !startTime
         ) {
 
-            alert("Please fill all appointment details.");
+            setMessage({
+                type: "error",
+                text: "Please fill all appointment details."
+            });
             return;
 
         }
@@ -310,7 +379,10 @@ function CustomerAppointments() {
                 }
             );
 
-            alert("Appointment request sent successfully.");
+            setMessage({
+                type: "success",
+                text: "Appointment request sent successfully."
+            });
 
             setSelectedService("");
             setSelectedStylist("");
@@ -323,10 +395,12 @@ function CustomerAppointments() {
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to book appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to book appointment"
+            });
 
         }
 
@@ -335,15 +409,18 @@ function CustomerAppointments() {
 
     // ================= CANCEL =================
 
-    const cancelAppointment = async (id) => {
+    const cancelAppointment = (id) => {
 
-        const confirmCancel = window.confirm(
-            "Are you sure you want to cancel this appointment?"
-        );
+        // Ask first. The real work happens only after the user clicks YES.
+        setConfirmBox({
+            text: "Are you sure you want to cancel this appointment? If you already paid online, you get a full refund.",
+            onYes: () => cancelAppointmentConfirmed(id)
+        });
 
-        if (!confirmCancel) {
-            return;
-        }
+    };
+
+
+    const cancelAppointmentConfirmed = async (id) => {
 
         try {
 
@@ -357,16 +434,21 @@ function CustomerAppointments() {
                 }
             );
 
-            alert("Appointment cancelled.");
+            setMessage({
+                type: "success",
+                text: "Appointment cancelled."
+            });
 
             getAppointments();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to cancel appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to cancel appointment"
+            });
 
         }
 
@@ -375,23 +457,74 @@ function CustomerAppointments() {
 
     // ================= RESCHEDULE =================
 
-    const rescheduleAppointment = async (appointment) => {
+    const rescheduleAppointment = (appointment) => {
 
-        const newDate = window.prompt(
-            "Enter new date (YYYY-MM-DD):"
-        );
+        // Open the reschedule box with empty fields
+        setNewDate("");
+        setNewStartTime("");
+        setRescheduleSlots([]);
+        setReschedulingAppointment(appointment);
 
-        if (!newDate) {
+    };
+
+
+    // Runs when the customer picks a date in the reschedule box:
+    // load the free slots of the same stylist for that date
+    const changeRescheduleDate = async (date) => {
+
+        setNewDate(date);
+        setNewStartTime("");
+        setRescheduleSlots([]);
+
+        if (!date) {
             return;
         }
 
-        const newStartTime = window.prompt(
-            "Enter new start time (HH:MM):"
-        );
+        try {
 
-        if (!newStartTime) {
+            const response = await axios.get(
+                "http://localhost:5000/api/appointment/slots",
+                {
+                    params: {
+                        stylist: reschedulingAppointment.stylist?._id,
+                        service: reschedulingAppointment.service?._id,
+                        date: date
+                    },
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            setRescheduleSlots(response.data.slots || []);
+
+        } catch (error) {
+
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to load slots"
+            });
+
+        }
+
+    };
+
+
+    const saveReschedule = async (e) => {
+
+        e.preventDefault();
+
+        if (!newDate || !newStartTime) {
+            setMessage({
+                type: "error",
+                text: "Please choose a new date and time slot."
+            });
             return;
         }
+
+        const appointment = reschedulingAppointment;
 
         try {
 
@@ -423,16 +556,23 @@ function CustomerAppointments() {
                 }
             );
 
-            alert("Appointment rescheduled.");
+            setReschedulingAppointment(null);
+
+            setMessage({
+                type: "success",
+                text: "Appointment rescheduled."
+            });
 
             getAppointments();
 
         } catch (error) {
 
-            alert(
-                error.response?.data?.message ||
-                "Failed to reschedule appointment"
-            );
+            setMessage({
+                type: "error",
+                text:
+                    error.response?.data?.message ||
+                    "Failed to reschedule appointment"
+            });
 
         }
 
@@ -484,6 +624,45 @@ function CustomerAppointments() {
 
                     <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
 
+                        {/* STYLIST */}
+
+                        <div>
+
+                            <label className="text-sm text-[#6e5545]">
+                                Stylist
+                            </label>
+
+                            <select
+                                value={selectedStylist}
+                                onChange={(e) => {
+                                    // A different stylist offers different services,
+                                    // so the chosen service is cleared
+                                    setSelectedStylist(e.target.value);
+                                    setSelectedService("");
+                                }}
+                                className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                            >
+
+                                <option value="">
+                                    Select stylist
+                                </option>
+
+                                {stylists.map((stylist) => (
+
+                                    <option
+                                        key={stylist._id}
+                                        value={stylist._id}
+                                    >
+                                        {stylist.user?.name}
+                                    </option>
+
+                                ))}
+
+                            </select>
+
+                        </div>
+
+
                         {/* SERVICE */}
 
                         <div>
@@ -501,52 +680,18 @@ function CustomerAppointments() {
                             >
 
                                 <option value="">
-                                    Select service
+                                    {selectedStylist
+                                        ? "Select service"
+                                        : "Choose a stylist first"}
                                 </option>
 
-                                {services.map((service) => (
+                                {stylistServices.map((service) => (
 
                                     <option
                                         key={service._id}
                                         value={service._id}
                                     >
                                         {service.name} - ₹{service.price}
-                                    </option>
-
-                                ))}
-
-                            </select>
-
-                        </div>
-
-
-                        {/* STYLIST */}
-
-                        <div>
-
-                            <label className="text-sm text-[#6e5545]">
-                                Stylist
-                            </label>
-
-                            <select
-                                value={selectedStylist}
-                                onChange={(e) =>
-                                    setSelectedStylist(e.target.value)
-                                }
-                                className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
-                            >
-
-                                <option value="">
-                                    Select stylist
-                                </option>
-
-                                {stylists.map((stylist) => (
-
-                                    <option
-                                        key={stylist._id}
-                                        value={stylist._id}
-                                    >
-                                        {stylist.user?.name}
                                     </option>
 
                                 ))}
@@ -675,7 +820,7 @@ function CustomerAppointments() {
                                 <div>
 
                                     <p className="text-sm tracking-[2px] uppercase text-[#5a182b]">
-                                        {appointment.status}
+                                        {getStatusText(appointment)}
                                     </p>
 
                                     {/* PAYMENT */}
@@ -684,13 +829,26 @@ function CustomerAppointments() {
 
                                         <p className="mt-2 text-sm text-green-700">
                                             PAID ₹{appointment.amount}
+                                            {appointment.paymentMethod === "cash"
+                                                ? " (cash)"
+                                                : " (online)"}
+                                        </p>
+
+                                    )}
+
+                                    {appointment.paymentStatus === "refunded" && (
+
+                                        <p className="mt-2 text-sm text-[#6e5545]">
+                                            REFUNDED ₹{appointment.amount}
                                         </p>
 
                                     )}
 
                                     {(appointment.status === "approved" ||
                                         appointment.status === "completed") &&
-                                        appointment.paymentStatus !== "paid" && (
+                                        appointment.paymentStatus === "unpaid" && (
+
+                                            <div>
 
                                             <button
                                                 onClick={() =>
@@ -702,6 +860,12 @@ function CustomerAppointments() {
                                             >
                                                 PAY ₹{appointment.service?.price}
                                             </button>
+
+                                            <p className="mt-2 text-xs text-[#9a7b62]">
+                                                or pay at the salon
+                                            </p>
+
+                                            </div>
 
                                         )}
 
@@ -757,6 +921,135 @@ function CustomerAppointments() {
                 )}
 
             </div>
+
+            {/* ================= PAY BOX ================= */}
+
+            {payingAppointment && (
+
+                <Modal
+                    title="Pay for appointment"
+                    onClose={() => setPayingAppointment(null)}
+                >
+
+                    <form onSubmit={startPayment}>
+
+                        <p className="text-[#6e5545]">
+                            {payingAppointment.service?.name}
+                            {" · "}
+                            ₹{payingAppointment.service?.price}
+                        </p>
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Coupon code (optional)
+                        </label>
+
+                        <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            placeholder="Example: WELCOME10"
+                            className="uppercase mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <p className="mt-3 text-sm text-[#9a7b62]">
+                            Membership and coupon discounts are applied on the next screen.
+                        </p>
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            CONTINUE TO PAYMENT
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+
+            {/* ================= RESCHEDULE BOX ================= */}
+
+            {reschedulingAppointment && (
+
+                <Modal
+                    title="Reschedule appointment"
+                    onClose={() => setReschedulingAppointment(null)}
+                >
+
+                    <form onSubmit={saveReschedule}>
+
+                        <p className="text-[#6e5545]">
+                            {reschedulingAppointment.service?.name}
+                            {" with "}
+                            {reschedulingAppointment.stylist?.user?.name || "your stylist"}
+                        </p>
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            New date
+                        </label>
+
+                        <input
+                            type="date"
+                            value={newDate}
+                            onChange={(e) => changeRescheduleDate(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Available time slot
+                        </label>
+
+                        <select
+                            value={newStartTime}
+                            onChange={(e) => setNewStartTime(e.target.value)}
+                            className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                        >
+
+                            <option value="">
+                                {rescheduleSlots.length > 0
+                                    ? "Select time slot"
+                                    : newDate
+                                        ? "No free slots on this date"
+                                        : "Choose a date first"}
+                            </option>
+
+                            {rescheduleSlots.map((slot) => (
+
+                                <option
+                                    key={slot.startTime}
+                                    value={slot.startTime}
+                                >
+                                    {slot.startTime} - {slot.endTime}
+                                </option>
+
+                            ))}
+
+                        </select>
+
+                        <button
+                            type="submit"
+                            className="mt-6 bg-[#5a182b] px-6 py-3 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE NEW TIME
+                        </button>
+
+                    </form>
+
+                </Modal>
+
+            )}
+
+            <Message
+                message={message}
+                onClose={() => setMessage(null)}
+            />
+
+            <ConfirmBox
+                confirmBox={confirmBox}
+                onClose={() => setConfirmBox(null)}
+            />
 
         </section>
     );

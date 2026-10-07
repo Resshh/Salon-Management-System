@@ -6,6 +6,7 @@ const ServiceHistory = require("../models/serviceHistoryModel");
 const SalonSetting = require("../models/salonSettingModel");
 
 const sendNotification = require("../utils/notificationService");
+const { refundIfPaid } = require("./paymentController");
 
 
 // ======================================================
@@ -646,7 +647,7 @@ const approveAppointment = async (req, res) => {
                 "Appointment Approved",
 
             message:
-                "Your appointment has been approved",
+                "Your appointment has been approved. Please pay online from My Appointments, or pay at the salon.",
 
             type:
                 "approval",
@@ -655,7 +656,7 @@ const approveAppointment = async (req, res) => {
                 "Your Appointment Has Been Approved - Beauté Salon",
 
             emailText:
-                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved. We look forward to seeing you at Beauté Salon.`
+                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved. Please log in to pay online from My Appointments, or pay at the salon. We look forward to seeing you at Beauté Salon.`
 
         });
 
@@ -1010,6 +1011,23 @@ const cancelAppointment = async (req, res) => {
             return res.status(400).json({
                 message:
                     "This appointment cannot be cancelled"
+            });
+
+        }
+
+
+        // ------------------------------------------
+        // REFUND FIRST (only if it was already paid)
+        // ------------------------------------------
+
+        const refund =
+            await refundIfPaid(appointment);
+
+        if (!refund.ok) {
+
+            return res.status(500).json({
+                message:
+                    refund.message
             });
 
         }
@@ -1641,6 +1659,19 @@ const updateAppointmentByAdmin = async (req, res) => {
                 return res.status(400).json({
                     message: "Admin can only approve or cancel"
                 });
+            }
+
+            // Admin cancels a paid appointment: refund first
+            if (status === "cancelled") {
+
+                const refund = await refundIfPaid(appointment);
+
+                if (!refund.ok) {
+                    return res.status(500).json({
+                        message: refund.message
+                    });
+                }
+
             }
 
             appointment.status = status;
