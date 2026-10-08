@@ -7,6 +7,9 @@ docs/
 # Claude Code local settings
 .claude/
 
+# Serena (code-navigation tool) makes this folder again when it starts
+.serena/
+
 # Requirement documents
 *.pdf
 
