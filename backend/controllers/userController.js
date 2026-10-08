@@ -3,10 +3,43 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
 const sendEmail = require("../utils/emailService");
+// Checks the email and password sent by the browser.
+// They must be plain text: if someone sends an object such as { "$gt": "" }
+// instead of an email, MongoDB would treat it as a search operator.
+// Returns an error message, or null when everything is fine.
+const checkEmailAndPassword = (email, password) => {
+
+    if (typeof email !== "string" || typeof password !== "string") {
+        return "Email and password are required";
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return "Please enter a valid email address";
+    }
+
+    return null;
+
+};
+
+
 const registerUser = async (req, res) => {
     try {
 
         const { name, email, password, phone, gender, dateOfBirth } = req.body;
+
+        const inputError = checkEmailAndPassword(email, password);
+
+        if (inputError) {
+            return res.status(400).json({
+                message: inputError
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters long"
+            });
+        }
 
         const existingUser = await User.findOne({ email });
 
@@ -30,7 +63,8 @@ const registerUser = async (req, res) => {
 
         await newUser.save();
 
-        await sendEmail(
+        // No "await": the response should not wait for the email
+        sendEmail(
             email,
             "Welcome to Beauté Salon",
             `Hi ${name}, your account has been created. You can now log in and book appointments.`
@@ -55,6 +89,13 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
+
+    if (checkEmailAndPassword(email, password)) {
+        return res.status(400).json({
+            message: "Invalid email or password"
+        });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
         return res.status(400).json({
@@ -100,6 +141,20 @@ const createStylistUser = async (req, res) => {
             specialization
         } = req.body;
 
+        const inputError = checkEmailAndPassword(email, password);
+
+        if (inputError) {
+            return res.status(400).json({
+                message: inputError
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters long"
+            });
+        }
+
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
@@ -131,7 +186,8 @@ const createStylistUser = async (req, res) => {
             workingSchedule: []
         });
 
-        await sendEmail(
+        // No "await": the response should not wait for the email
+        sendEmail(
             email,
             "Your Beauté Salon stylist account",
             `Hi ${name}, the salon admin created a stylist account for you. Log in with this email address, then set your services and working schedule.`

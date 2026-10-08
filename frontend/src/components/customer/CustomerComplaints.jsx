@@ -104,7 +104,7 @@ function CustomerComplaints() {
     return (
         <section
             id="complaints"
-            className="px-6 md:px-20 py-16 md:py-20"
+            className="px-6 md:px-20 pt-10 pb-16 md:pb-20"
         >
 
             {/* ================= HEADING ================= */}
@@ -197,7 +197,6 @@ function CustomerComplaints() {
                         <p className="mt-3 text-[#6e5545]">
                             {complaint.description}
                         </p>
-
                         <p className="mt-3 text-sm text-[#9a7b62]">
                             {new Date(
                                 complaint.createdAt

@@ -36,6 +36,12 @@ function CustomerAppointments() {
 
     const [showBooking, setShowBooking] = useState(false);
 
+    // Which appointments the list shows: "upcoming", "topay", "past", "cancelled" or "all"
+    const [filter, setFilter] = useState("upcoming");
+
+    // true while the booking request is on its way to the server
+    const [booking, setBooking] = useState(false);
+
     const token = localStorage.getItem("token");
 
     useEffect(() => {
@@ -275,6 +281,51 @@ function CustomerAppointments() {
     };
 
 
+    // ================= FILTER THE LIST =================
+
+    // Cancelled appointments stay in the database (the salon needs the record),
+    // but the customer only sees them when they choose to.
+    const visibleAppointments = appointments.filter((appointment) => {
+
+        // Same rule as the PAY button further down: the stylist has approved
+        // (or already finished) the appointment and no money has come in yet.
+        const needsPayment =
+            (appointment.status === "approved" ||
+                appointment.status === "completed") &&
+            appointment.paymentStatus === "unpaid";
+
+        // Still to happen, paid or not
+        if (filter === "upcoming") {
+            return (
+                appointment.status === "pending" ||
+                appointment.status === "approved"
+            );
+        }
+
+        // Only the ones waiting for money, so a paid one never shows here
+        if (filter === "topay") {
+            return needsPayment;
+        }
+
+        if (filter === "past") {
+            return (
+                (appointment.status === "completed" && !needsPayment) ||
+                appointment.status === "no-show"
+            );
+        }
+
+        if (filter === "cancelled") {
+            return (
+                appointment.status === "cancelled" ||
+                appointment.status === "rejected"
+            );
+        }
+
+        return true;
+
+    });
+
+
     // ================= STATUS TEXT =================
 
     // After the stylist approves, the customer still has to pay.
@@ -289,6 +340,14 @@ function CustomerAppointments() {
 
             return "Approved · payment pending";
 
+        }
+
+        // A paid appointment that was rescheduled waits for approval again
+        if (
+            appointment.status === "pending" &&
+            appointment.paymentStatus === "paid"
+        ) {
+            return "Pending approval · paid";
         }
 
         return appointment.status;
@@ -352,6 +411,13 @@ function CustomerAppointments() {
 
         }
 
+        // A second click while the first request is still running is ignored
+        if (booking) {
+            return;
+        }
+
+        setBooking(true);
+
         try {
 
             const selectedServiceData = services.find(
@@ -401,6 +467,10 @@ function CustomerAppointments() {
                     error.response?.data?.message ||
                     "Failed to book appointment"
             });
+
+        } finally {
+
+            setBooking(false);
 
         }
 
@@ -560,7 +630,7 @@ function CustomerAppointments() {
 
             setMessage({
                 type: "success",
-                text: "Appointment rescheduled."
+                text: "Appointment rescheduled. The stylist has to approve the new time."
             });
 
             getAppointments();
@@ -763,9 +833,10 @@ function CustomerAppointments() {
 
                     <button
                         type="submit"
-                        className="mt-6 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        disabled={booking}
+                        className="mt-6 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d] disabled:opacity-60"
                     >
-                        CONFIRM BOOKING
+                        {booking ? "BOOKING..." : "CONFIRM BOOKING"}
                     </button>
 
                 </form>
@@ -773,13 +844,31 @@ function CustomerAppointments() {
             )}
 
 
+            {/* ================= FILTER ================= */}
+
+            <select
+                value={filter}
+                onChange={(e) =>
+                    setFilter(e.target.value)
+                }
+                aria-label="Show appointments"
+                className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+            >
+                <option value="upcoming">Upcoming</option>
+                <option value="topay">To pay</option>
+                <option value="past">Past</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="all">All</option>
+            </select>
+
+
             {/* ================= APPOINTMENT LIST ================= */}
 
-            <div className="mt-8 space-y-5">
+            <div className="mt-5 space-y-5">
 
-                {appointments.length > 0 ? (
+                {visibleAppointments.length > 0 ? (
 
-                    appointments.map((appointment) => (
+                    visibleAppointments.map((appointment) => (
 
                         <div
                             key={appointment._id}
@@ -913,7 +1002,9 @@ function CustomerAppointments() {
                     <div className="border border-[#c9aa91] bg-[#f7efe5] p-8">
 
                         <p className="text-[#6e5545]">
-                            No appointments yet.
+                            {filter === "all"
+                                ? "No appointments yet."
+                                : "No appointments in this list."}
                         </p>
 
                     </div>
@@ -984,6 +1075,10 @@ function CustomerAppointments() {
                             {reschedulingAppointment.service?.name}
                             {" with "}
                             {reschedulingAppointment.stylist?.user?.name || "your stylist"}
+                        </p>
+
+                        <p className="mt-2 text-sm text-[#9a7b62]">
+                            The stylist has to approve the new time.
                         </p>
 
                         <label className="mt-4 block text-sm text-[#6e5545]">

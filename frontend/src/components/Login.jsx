@@ -10,6 +10,9 @@ function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    // true = the password is shown as normal text
+    const [showPassword, setShowPassword] = useState(false);
+
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -54,11 +57,9 @@ function Login() {
                     </p>
 
                     <h2>
-                        Confidence
+                        Your Beauty,
                         <br />
-                        Looks Good
-                        <br />
-                        <span>On You.</span>
+                        <span>Your Style.</span>
                     </h2>
 
                     <p className="description">
@@ -76,36 +77,94 @@ function Login() {
                     <h2>Welcome Back</h2>
 
                     <p className="login-subtitle">
-                        Sign in to your BEAUTÉ account
+                        Log in to your account
                     </p>
 
                     <form onSubmit={handleLogin}>
 
                         <label>Email</label>
 
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            required
-                        />
+                        <div className="input-wrap">
+
+                            {/* envelope icon */}
+                            <svg
+                                className="input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.7"
+                                aria-hidden="true"
+                            >
+                                <rect x="3" y="5" width="18" height="14" rx="2" />
+                                <path d="M3 7l9 6 9-6" />
+                            </svg>
+
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                required
+                            />
+
+                        </div>
 
                         <label>Password</label>
 
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                            required
-                        />
+                        <div className="input-wrap">
+
+                            {/* lock icon */}
+                            <svg
+                                className="input-icon"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.7"
+                                aria-hidden="true"
+                            >
+                                <rect x="5" y="11" width="14" height="9" rx="2" />
+                                <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                            </svg>
+
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                required
+                            />
+
+                            {/* eye icon: click to show or hide the password */}
+                            <button
+                                type="button"
+                                className="eye-button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.7"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                    {!showPassword && <path d="M4 4l16 16" />}
+                                </svg>
+                            </button>
+
+                        </div>
 
                         <button type="submit">
-                            LOGIN
+                            Login
                         </button>
 
                     </form>
+
+                    <div className="or-line">
+                        <span>OR</span>
+                    </div>
 
                     <p className="register-text">
                         Don't have an account?

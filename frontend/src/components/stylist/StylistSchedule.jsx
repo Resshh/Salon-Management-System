@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Message from "../Message";
+import StylistAttendance from "./StylistAttendance";
 
 const DAYS = [
     "Monday",
@@ -14,10 +15,12 @@ const DAYS = [
 
 function StylistSchedule() {
 
-    // One row per day: { day, working, startTime, endTime }
     // Success / error message shown at the top right
     const [message, setMessage] = useState(null);
 
+    // One item per day:
+    //   { day: "Monday", slots: [ { startTime: "10:00", endTime: "13:00" }, ... ] }
+    // A day with no slots is a day off.
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -46,33 +49,28 @@ function StylistSchedule() {
             const savedSchedule =
                 response.data.stylist.workingSchedule || [];
 
-            // Build a row for all 7 days.
-            // If the day is saved in the database, use its times.
-            const rows = DAYS.map((day) => {
+            // The database stores one row per time slot: { day, startTime, endTime }.
+            // Group those rows by day so each day shows its own list of slots.
+            const days = DAYS.map((day) => {
 
-                const savedDay = savedSchedule.find(
-                    (item) => item.day === day
-                );
-
-                if (savedDay) {
-                    return {
-                        day: day,
-                        working: true,
-                        startTime: savedDay.startTime,
-                        endTime: savedDay.endTime
-                    };
-                }
+                const daySlots = savedSchedule
+                    .filter((item) => item.day === day)
+                    .map((item) => ({
+                        startTime: item.startTime,
+                        endTime: item.endTime
+                    }))
+                    .sort((a, b) =>
+                        a.startTime.localeCompare(b.startTime)
+                    );
 
                 return {
                     day: day,
-                    working: false,
-                    startTime: "09:00",
-                    endTime: "18:00"
+                    slots: daySlots
                 };
 
             });
 
-            setSchedule(rows);
+            setSchedule(days);
 
         } catch (error) {
 
@@ -90,19 +88,79 @@ function StylistSchedule() {
     };
 
 
-    // ================= CHANGE ONE DAY =================
+    // ================= CHANGE THE SLOTS OF ONE DAY =================
 
-    const changeDay = (index, field, value) => {
+    // Replaces the slots of the day at dayIndex with newSlots
+    const setDaySlots = (dayIndex, newSlots) => {
 
-        // Copy the array, then replace the one row that changed
         const newSchedule = [...schedule];
 
-        newSchedule[index] = {
-            ...newSchedule[index],
-            [field]: value
+        newSchedule[dayIndex] = {
+            ...newSchedule[dayIndex],
+            slots: newSlots
         };
 
         setSchedule(newSchedule);
+
+    };
+
+
+    // ================= ADD A SLOT =================
+
+    const addSlot = (dayIndex) => {
+
+        const slots = schedule[dayIndex].slots;
+
+        // First slot of the day: a normal morning.
+        // Next slots start where the last one ended.
+        let newSlot = {
+            startTime: "10:00",
+            endTime: "13:00"
+        };
+
+        if (slots.length > 0) {
+
+            const lastEnd = slots[slots.length - 1].endTime;
+
+            newSlot = {
+                startTime: lastEnd,
+                endTime: lastEnd
+            };
+
+        }
+
+        setDaySlots(dayIndex, [...slots, newSlot]);
+
+    };
+
+
+    // ================= REMOVE A SLOT =================
+
+    const removeSlot = (dayIndex, slotIndex) => {
+
+        setDaySlots(
+            dayIndex,
+            schedule[dayIndex].slots.filter(
+                (slot, index) => index !== slotIndex
+            )
+        );
+
+    };
+
+
+    // ================= CHANGE A TIME =================
+
+    // field is "startTime" or "endTime"
+    const changeSlot = (dayIndex, slotIndex, field, value) => {
+
+        const newSlots = [...schedule[dayIndex].slots];
+
+        newSlots[slotIndex] = {
+            ...newSlots[slotIndex],
+            [field]: value
+        };
+
+        setDaySlots(dayIndex, newSlots);
 
     };
 
@@ -113,28 +171,54 @@ function StylistSchedule() {
 
         e.preventDefault();
 
-        // Only working days are saved
-        const workingDays = schedule.filter(
-            (item) => item.working
-        );
+        // Turn the days back into one row per slot, the shape the database uses
+        const workingSchedule = [];
 
-        for (const item of workingDays) {
+        for (const item of schedule) {
 
-            if (item.startTime >= item.endTime) {
-                setMessage({
-                    type: "error",
-                    text: `End time must be after start time on ${item.day}.`
+            for (const slot of item.slots) {
+
+                if (!slot.startTime || !slot.endTime) {
+                    setMessage({
+                        type: "error",
+                        text: `Please fill both times for every slot on ${item.day}.`
+                    });
+                    return;
+                }
+
+                if (slot.startTime >= slot.endTime) {
+                    setMessage({
+                        type: "error",
+                        text: `End time must be after start time on ${item.day}.`
+                    });
+                    return;
+                }
+
+                // Two slots overlap when each one starts before the other ends
+                const overlapping = item.slots.find(
+                    (other) =>
+                        other !== slot &&
+                        other.startTime < slot.endTime &&
+                        other.endTime > slot.startTime
+                );
+
+                if (overlapping) {
+                    setMessage({
+                        type: "error",
+                        text: `Two time slots overlap on ${item.day}.`
+                    });
+                    return;
+                }
+
+                workingSchedule.push({
+                    day: item.day,
+                    startTime: slot.startTime,
+                    endTime: slot.endTime
                 });
-                return;
+
             }
 
         }
-
-        const workingSchedule = workingDays.map((item) => ({
-            day: item.day,
-            startTime: item.startTime,
-            endTime: item.endTime
-        }));
 
         try {
 
@@ -174,22 +258,23 @@ function StylistSchedule() {
     return (
         <section
             id="schedule"
-            className="px-6 md:px-20 py-16 md:py-20"
+            className="px-6 md:px-20 py-10 md:py-14"
         >
+
+            {/* ================= CLOCK IN / CLOCK OUT ================= */}
+
+            <StylistAttendance />
+
 
             {/* ================= HEADING ================= */}
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
+            <p className="mt-14 text-xs tracking-[4px] text-[#9a7b62]">
                 YOUR WORKING HOURS
             </p>
 
             <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
                 Schedule
             </h2>
-
-            <p className="mt-4 max-w-xl text-[#6e5545]">
-                Customers can only book you on the days and times you set here.
-            </p>
 
 
             {loading ? (
@@ -208,103 +293,135 @@ function StylistSchedule() {
 
             ) : (
 
-                <form
-                    onSubmit={saveSchedule}
-                    className="mt-8 border border-[#c9aa91] bg-[#efe2d5] p-8"
-                >
+                <div>
 
-                    <div className="space-y-4">
+                    {/* ================= WORKING TIME SLOTS ================= */}
 
-                        {schedule.map((item, index) => (
+                    <form
+                        onSubmit={saveSchedule}
+                        className="mt-8 border border-[#c9aa91] bg-[#efe2d5] p-6 md:p-8"
+                    >
 
-                            <div
-                                key={item.day}
-                                className="flex flex-col md:flex-row md:items-center gap-4 border-b border-[#d8c6b6] pb-4"
-                            >
+                        <p className="text-xs tracking-[3px] text-[#9a7b62]">
+                            WORKING TIME SLOTS
+                        </p>
 
-                                {/* DAY */}
+                        <p className="mt-2 max-w-xl text-[#6e5545]">
+                            Add the times you are willing to work on each day. Customers can only book you inside these slots. A day with no slot is a day off.
+                        </p>
 
-                                <label className="flex items-center gap-3 md:w-48 cursor-pointer">
+                        <div className="mt-6 space-y-5">
 
-                                    <input
-                                        type="checkbox"
-                                        checked={item.working}
-                                        onChange={(e) =>
-                                            changeDay(
-                                                index,
-                                                "working",
-                                                e.target.checked
-                                            )
-                                        }
-                                    />
+                            {schedule.map((item, dayIndex) => (
 
-                                    <span className="text-[#321d1d]">
+                                <div
+                                    key={item.day}
+                                    className="flex flex-col md:flex-row md:items-start gap-3 md:gap-6 border-b border-[#d8c6b6] pb-5"
+                                >
+
+                                    {/* DAY */}
+
+                                    <p className="md:w-32 md:pt-2 text-[#321d1d]">
                                         {item.day}
-                                    </span>
-
-                                </label>
+                                    </p>
 
 
-                                {/* TIMES */}
+                                    {/* SLOTS OF THIS DAY */}
 
-                                {item.working ? (
+                                    <div className="flex-1 space-y-3">
 
-                                    <div className="flex items-center gap-3">
+                                        {item.slots.length === 0 && (
 
-                                        <input
-                                            type="time"
-                                            value={item.startTime}
-                                            onChange={(e) =>
-                                                changeDay(
-                                                    index,
-                                                    "startTime",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="border border-[#c9aa91] bg-[#f7efe5] p-2 text-[#321d1d] outline-none"
-                                        />
+                                            <p className="md:pt-2 text-sm text-[#9a7b62]">
+                                                Day off
+                                            </p>
 
-                                        <span className="text-[#6e5545]">
-                                            to
-                                        </span>
+                                        )}
 
-                                        <input
-                                            type="time"
-                                            value={item.endTime}
-                                            onChange={(e) =>
-                                                changeDay(
-                                                    index,
-                                                    "endTime",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="border border-[#c9aa91] bg-[#f7efe5] p-2 text-[#321d1d] outline-none"
-                                        />
+                                        {item.slots.map((slot, slotIndex) => (
+
+                                            <div
+                                                key={slotIndex}
+                                                className="flex flex-wrap items-center gap-3"
+                                            >
+
+                                                <input
+                                                    type="time"
+                                                    value={slot.startTime}
+                                                    aria-label={`${item.day} slot ${slotIndex + 1} start time`}
+                                                    onChange={(e) =>
+                                                        changeSlot(
+                                                            dayIndex,
+                                                            slotIndex,
+                                                            "startTime",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="border border-[#c9aa91] bg-[#f7efe5] p-2 text-[#321d1d] outline-none"
+                                                />
+
+                                                <span className="text-[#6e5545]">
+                                                    to
+                                                </span>
+
+                                                <input
+                                                    type="time"
+                                                    value={slot.endTime}
+                                                    aria-label={`${item.day} slot ${slotIndex + 1} end time`}
+                                                    onChange={(e) =>
+                                                        changeSlot(
+                                                            dayIndex,
+                                                            slotIndex,
+                                                            "endTime",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className="border border-[#c9aa91] bg-[#f7efe5] p-2 text-[#321d1d] outline-none"
+                                                />
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeSlot(
+                                                            dayIndex,
+                                                            slotIndex
+                                                        )
+                                                    }
+                                                    className="text-sm text-[#5a182b] underline"
+                                                >
+                                                    Remove
+                                                </button>
+
+                                            </div>
+
+                                        ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => addSlot(dayIndex)}
+                                            className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                        >
+                                            + ADD TIME SLOT
+                                        </button>
 
                                     </div>
 
-                                ) : (
+                                </div>
 
-                                    <p className="text-sm text-[#9a7b62]">
-                                        Day off
-                                    </p>
+                            ))}
 
-                                )}
+                        </div>
 
-                            </div>
+                        <button
+                            type="submit"
+                            className="mt-7 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
+                        >
+                            SAVE SCHEDULE
+                        </button>
 
-                        ))}
+                    </form>
 
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="mt-7 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
-                    >
-                        SAVE SCHEDULE
-                    </button>
-
-                </form>
+                </div>
 
             )}
 

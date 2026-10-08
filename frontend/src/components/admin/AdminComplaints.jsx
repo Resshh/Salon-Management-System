@@ -110,7 +110,7 @@ function AdminComplaints() {
     return (
         <section
             id="complaints"
-            className="px-6 md:px-20 py-16 md:py-20"
+            className="px-6 md:px-20 pt-10 pb-16 md:pb-20"
         >
 
             <p className="text-xs tracking-[4px] text-[#9a7b62]">
@@ -174,7 +174,6 @@ function AdminComplaints() {
                             <p className="mt-4 text-[#6e5545]">
                                 {complaint.description}
                             </p>
-
                             {complaint.adminResponse && (
 
                                 <div className="mt-4 border-l-2 border-[#b88952] pl-4">

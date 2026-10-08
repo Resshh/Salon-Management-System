@@ -101,12 +101,14 @@ const markAppointmentPaid = async (appointmentId, details) => {
 
 
 // ======================================================
-// HELPER: REFUND A PAID APPOINTMENT (used when it is cancelled)
+// HELPER: REFUND A PAID APPOINTMENT
+// Used when a paid appointment is cancelled or rejected.
+// "reason" is the word used in messages: "cancelled" or "rejected".
 // It changes the appointment fields; the caller saves the appointment.
 // Returns { ok: true } or { ok: false, message }.
 // ======================================================
 
-const refundIfPaid = async (appointment) => {
+const refundIfPaid = async (appointment, reason = "cancelled") => {
 
     if (appointment.paymentStatus !== "paid") {
         return { ok: true };
@@ -114,47 +116,39 @@ const refundIfPaid = async (appointment) => {
 
     // Cash cannot be sent back by Razorpay. The salon returns it by hand.
     // (No Razorpay payment id also means it was not paid online.)
-    if (
+    const paidInCash =
         appointment.paymentMethod === "cash" ||
-        !appointment.razorpayPaymentId
-    ) {
+        !appointment.razorpayPaymentId;
 
-        await sendNotification({
-            recipient: appointment.customer,
-            title: "Refund At Salon",
-            message: `Your appointment was cancelled. Please collect your cash refund of ₹${appointment.amount} at the salon.`,
-            type: "payment",
-            emailSubject: "Refund - Beauté Salon",
-            emailText: `Your appointment was cancelled. Please collect your cash refund of ₹${appointment.amount} at the salon.`
-        });
+    if (!paidInCash) {
 
-        return { ok: true };
+        try {
 
-    }
+            // Razorpay works in paise: 1 rupee = 100 paise
+            const refund = await getRazorpay().payments.refund(
+                appointment.razorpayPaymentId,
+                {
+                    amount: appointment.amount * 100
+                }
+            );
 
-    try {
+            appointment.razorpayRefundId = refund.id;
 
-        // Razorpay works in paise: 1 rupee = 100 paise
-        const refund = await getRazorpay().payments.refund(
-            appointment.razorpayPaymentId,
-            {
-                amount: appointment.amount * 100
-            }
-        );
+        } catch (error) {
 
-        appointment.paymentStatus = "refunded";
-        appointment.razorpayRefundId = refund.id;
+            console.error("Refund failed:", error);
 
-    } catch (error) {
+            return {
+                ok: false,
+                message: `Refund failed, so the appointment was not ${reason}. Please try again.`
+            };
 
-        console.error("Refund failed:", error);
-
-        return {
-            ok: false,
-            message: "Refund failed, so the appointment was not cancelled. Please try again."
-        };
+        }
 
     }
+
+    // Online or cash: the money no longer counts as collected
+    appointment.paymentStatus = "refunded";
 
     // Take back the loyalty points earned from this payment (never below 0)
     const customer = await User.findById(appointment.customer);
@@ -170,13 +164,17 @@ const refundIfPaid = async (appointment) => {
 
     }
 
+    const text = paidInCash
+        ? `Your appointment was ${reason}. Please collect your cash refund of ₹${appointment.amount} at the salon.`
+        : `Your appointment was ${reason} and your payment of ₹${appointment.amount} is being refunded. It usually reaches your account in 5-7 working days.`;
+
     await sendNotification({
         recipient: appointment.customer,
-        title: "Refund Started",
-        message: `Your payment of ₹${appointment.amount} is being refunded. It reaches your account in 5-7 working days.`,
+        title: paidInCash ? "Refund At Salon" : "Refund Started",
+        message: text,
         type: "payment",
-        emailSubject: "Refund Started - Beauté Salon",
-        emailText: `Your appointment was cancelled and your payment of ₹${appointment.amount} is being refunded. It usually reaches your account in 5-7 working days.`
+        emailSubject: "Refund - Beauté Salon",
+        emailText: text
     });
 
     return { ok: true };

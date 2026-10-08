@@ -1,20 +1,46 @@
+import { useEffect } from "react";
+import { NavLink, Route, Routes, useLocation } from "react-router-dom";
+
+import CustomerHome from "./CustomerHome";
 import CustomerServices from "./CustomerServices";
 import CustomerStylists from "./CustomerStylists";
 import CustomerAppointments from "./CustomerAppointments";
-import NotificationBell from "../NotificationBell";
 import CustomerHistory from "./CustomerHistory";
-import CustomerFeedback from "./CustomerFeedback";
-import CustomerComplaints from "./CustomerComplaints";
-import CustomerMembership from "./CustomerMembership";
+import CustomerFeedbackComplaints from "./CustomerFeedbackComplaints";
+import NotificationBell from "../NotificationBell";
+
+// The customer area. The navbar and footer stay the same on every page;
+// only the part in the middle changes with the URL:
+//   /customer               -> Home
+//   /customer/services      -> Services
+//   /customer/appointments  -> Appointments   ...and so on
+
+// The navbar links: where each one goes and what it says
+const links = [
+    { to: "/customer", label: "Home" },
+    { to: "/customer/services", label: "Services" },
+    { to: "/customer/stylists", label: "Stylists" },
+    { to: "/customer/appointments", label: "Appointments" },
+    { to: "/customer/history", label: "History" },
+    { to: "/customer/feedback", label: "Feedback & Complaints" }
+];
 
 function CustomerDashboard() {
 
+    // The current URL. When it changes, start the new page from the top.
+    const location = useLocation();
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
+
+
     return (
-        <div className="min-h-screen bg-[#f7efe5] text-[#321d1d]">
+        <div className="soft-theme dash min-h-screen flex flex-col bg-[#f7efe5] text-[#321d1d]">
 
             {/* ================= NAVBAR ================= */}
 
-            <nav className="min-h-20 px-6 md:px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-5 border-b border-[#d8c6b6]">
+            <nav className="sticky-nav min-h-20 px-6 md:px-10 py-5 flex flex-col md:flex-row items-center justify-between gap-5 border-b border-[#d8c6b6]">
 
                 <h1 className="text-3xl font-normal tracking-[5px] text-[#5a182b]">
                     BEAUTÉ
@@ -22,54 +48,21 @@ function CustomerDashboard() {
 
                 <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-[#6e5545]">
 
-                    <a
-                        href="#home"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Home
-                    </a>
+                    {/* NavLink adds the class "active" to the link of the current page.
+                        "end" means: only active on exactly this URL. */}
 
-                    <a
-                        href="#services"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Services
-                    </a>
+                    {links.map((link) => (
 
-                    <a
-                        href="#stylists"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Stylists
-                    </a>
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            end
+                            className="nav-link"
+                        >
+                            {link.label}
+                        </NavLink>
 
-                    <a
-                        href="#appointments"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Appointments
-                    </a>
-
-                    <a
-                        href="#history"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        History
-                    </a>
-
-                    <a
-                        href="#feedback"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Feedback
-                    </a>
-
-                    <a
-                        href="#complaints"
-                        className="cursor-pointer hover:text-[#5a182b]"
-                    >
-                        Complaints
-                    </a>
+                    ))}
 
                     <NotificationBell />
 
@@ -89,71 +82,45 @@ function CustomerDashboard() {
             </nav>
 
 
-            {/* ================= HERO ================= */}
+            {/* ================= THE PAGE ================= */}
 
-            <section
-                id="home"
-                className="px-6 md:px-20 py-20 md:py-28"
-            >
+            <main className="flex-1">
 
-                <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                    WELCOME TO BEAUTÉ
+                <Routes>
+
+                    <Route index element={<CustomerHome />} />
+                    <Route path="services" element={<CustomerServices />} />
+                    <Route path="stylists" element={<CustomerStylists />} />
+                    <Route path="appointments" element={<CustomerAppointments />} />
+                    <Route path="history" element={<CustomerHistory />} />
+                    <Route path="feedback" element={<CustomerFeedbackComplaints />} />
+
+                    {/* Any other URL under /customer shows the home page */}
+                    <Route path="*" element={<CustomerHome />} />
+
+                </Routes>
+
+            </main>
+
+
+            {/* ================= FOOTER ================= */}
+
+            <footer className="dash-footer">
+
+                <div>
+                    <p className="dash-footer-brand">
+                        BEAUTÉ
+                    </p>
+                    <p className="dash-footer-tagline">
+                        Beauty. Style. You.
+                    </p>
+                </div>
+
+                <p className="dash-footer-note">
+                    © 2026 BEAUTÉ Salon. All rights reserved.
                 </p>
 
-                <h2 className="mt-5 text-5xl md:text-7xl font-normal leading-none text-[#5a182b]">
-                    Your Beauty,
-                    <br />
-                    Your Style.
-                </h2>
-
-                <p className="mt-6 text-base md:text-lg leading-7 text-[#6e5545]">
-                    Discover services crafted to make you
-                    <br className="hidden md:block" />
-                    look and feel your best.
-                </p>
-
-                <a
-                    href="#services"
-                    className="inline-block mt-7 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
-                >
-                    EXPLORE SERVICES
-                </a>
-
-            </section>
-
-
-            {/* ================= MEMBERSHIP ================= */}
-
-            <CustomerMembership />
-
-
-            {/* ================= SERVICES ================= */}
-
-            <CustomerServices />
-
-
-            {/* ================= STYLISTS ================= */}
-
-            <CustomerStylists />
-
-
-            {/* ================= APPOINTMENTS ================= */}
-
-            <CustomerAppointments />
-            
-            {/* ================= HISTORY ================= */}
-
-            <CustomerHistory />
-
-
-            {/* ================= FEEDBACK ================= */}
-
-            <CustomerFeedback />
-
-
-            {/* ================= COMPLAINTS ================= */}
-
-            <CustomerComplaints />
+            </footer>
 
         </div>
     );

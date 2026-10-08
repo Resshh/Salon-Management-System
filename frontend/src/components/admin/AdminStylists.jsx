@@ -19,6 +19,9 @@ function AdminStylists() {
     const [confirmBox, setConfirmBox] = useState(null);
 
     const [stylists, setStylists] = useState([]);
+
+    // Today's clock in / clock out records of all stylists
+    const [attendance, setAttendance] = useState([]);
     const [showForm, setShowForm] = useState(false);
 
     const [name, setName] = useState("");
@@ -33,7 +36,66 @@ function AdminStylists() {
 
     useEffect(() => {
         getStylists();
+        getAttendance();
     }, []);
+
+
+    // ================= TODAY'S ATTENDANCE =================
+
+    const getAttendance = async () => {
+
+        try {
+
+            const response = await axios.get(
+                "http://localhost:5000/api/attendance/today",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            setAttendance(response.data.records || []);
+
+        } catch (error) {
+
+            console.log(
+                error.response?.data?.message ||
+                "Failed to load attendance"
+            );
+
+        }
+
+    };
+
+
+    // Text shown on a stylist card, for example "Clocked in at 10:05 am"
+    const getAttendanceText = (stylistId) => {
+
+        // All of today's records of this stylist, oldest first
+        const records = attendance.filter(
+            (record) => record.stylist === stylistId
+        );
+
+        if (records.length === 0) {
+            return "Not clocked in today";
+        }
+
+        const last = records[records.length - 1];
+
+        const time = (date) =>
+            new Date(date).toLocaleTimeString("en-IN", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+        if (!last.clockOut) {
+            return `Clocked in at ${time(last.clockIn)}`;
+        }
+
+        return `Clocked out at ${time(last.clockOut)}`;
+
+    };
 
 
     // ================= GET STYLISTS =================
@@ -436,15 +498,36 @@ function AdminStylists() {
                             </p>
 
                             <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
-                                WORKING DAYS
+                                WORKING TIME SLOTS
+                            </p>
+
+                            {stylist.workingSchedule?.length > 0 ? (
+
+                                stylist.workingSchedule.map((item, index) => (
+
+                                    <p
+                                        key={index}
+                                        className="mt-1 text-sm text-[#6e5545]"
+                                    >
+                                        {item.day}: {item.startTime} - {item.endTime}
+                                    </p>
+
+                                ))
+
+                            ) : (
+
+                                <p className="mt-2 text-sm text-[#6e5545]">
+                                    No schedule set yet
+                                </p>
+
+                            )}
+
+                            <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
+                                TODAY
                             </p>
 
                             <p className="mt-2 text-sm text-[#6e5545]">
-                                {stylist.workingSchedule?.length > 0
-                                    ? stylist.workingSchedule
-                                        .map((item) => item.day)
-                                        .join(", ")
-                                    : "No schedule set yet"}
+                                {getAttendanceText(stylist._id)}
                             </p>
 
                             {stylist.user && (

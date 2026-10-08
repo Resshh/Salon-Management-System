@@ -154,7 +154,7 @@ function CustomerFeedback() {
     return (
         <section
             id="feedback"
-            className="bg-[#efe2d5] px-6 md:px-20 py-16 md:py-20"
+            className="bg-[#efe2d5] px-6 md:px-20 pt-10 pb-16 md:pb-20"
         >
 
             {/* ================= HEADING ================= */}

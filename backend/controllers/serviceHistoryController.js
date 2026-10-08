@@ -3,57 +3,6 @@ const Appointment = require("../models/appointmentModel");
 const Stylist = require("../models/stylistModel");
 
 
-// Create service history when appointment is completed
-const createServiceHistory = async (req, res) => {
-    try {
-        const { appointment, notes } = req.body;
-
-        const existingAppointment = await Appointment.findById(appointment);
-
-        if (!existingAppointment) {
-            return res.status(404).json({
-                message: "Appointment not found"
-            });
-        }
-
-        if (existingAppointment.status !== "completed") {
-            return res.status(400).json({
-                message: "Service history can only be created for completed appointments"
-            });
-        }
-
-        const existingHistory = await ServiceHistory.findOne({
-            appointment
-        });
-
-        if (existingHistory) {
-            return res.status(400).json({
-                message: "Service history already exists"
-            });
-        }
-
-        const history = await ServiceHistory.create({
-            appointment,
-            customer: existingAppointment.customer,
-            stylist: existingAppointment.stylist,
-            service: existingAppointment.service,
-            serviceDate: existingAppointment.date,
-            notes
-        });
-
-        res.status(201).json({
-            message: "Service history created successfully",
-            history
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            message: "Failed to create service history"
-        });
-    }
-};
-
-
 // Customer views own service history
 const getCustomerHistory = async (req, res) => {
     try {
@@ -165,6 +114,22 @@ const updateServiceNotes = async (req, res) => {
 // Stylist views the previous services of one customer
 const getCustomerHistoryForStylist = async (req, res) => {
     try {
+        // A stylist may only look at customers who have booked with them
+        const stylist = await Stylist.findOne({
+            user: req.user.userId
+        });
+
+        const hasBooked = stylist && await Appointment.findOne({
+            stylist: stylist._id,
+            customer: req.params.customerId
+        });
+
+        if (!hasBooked) {
+            return res.status(403).json({
+                message: "You can only view customers who have booked with you"
+            });
+        }
+
         const history = await ServiceHistory.find({
             customer: req.params.customerId
         })
@@ -193,7 +158,6 @@ const getCustomerHistoryForStylist = async (req, res) => {
 
 module.exports = {
     getCustomerHistoryForStylist,
-    createServiceHistory,
     getCustomerHistory,
     getStylistHistory,
     updateServiceNotes

@@ -168,7 +168,7 @@ function NotificationBell() {
 
                 // pt-2 keeps the list touching the button,
                 // so the mouse can move down into it without closing it
-                <div className="absolute right-0 top-full z-30 w-80 max-w-[90vw] pt-2">
+                <div className="absolute left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 top-full z-30 w-80 max-w-[90vw] pt-2">
 
                     <div className="max-h-96 overflow-y-auto border border-[#c9aa91] bg-[#f7efe5] text-left shadow-lg">
 

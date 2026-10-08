@@ -86,6 +86,20 @@ const appointmentSchema = new mongoose.Schema(
 
         razorpayRefundId: {
             type: String
+        },
+
+        // ---------- TIMES USED BY THE ADMIN DASHBOARD ----------
+
+        // When the customer asked for this time (set again on a reschedule)
+        // (no default on purpose: a default would also be filled in when an OLD
+        //  appointment is loaded, and make it look as if it was requested just now)
+        requestedAt: {
+            type: Date
+        },
+
+        // When the stylist (or admin) approved or rejected it
+        respondedAt: {
+            type: Date
         }
     },
     { timestamps: true }

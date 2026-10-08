@@ -44,7 +44,7 @@ function AdminFeedback() {
     return (
         <section
             id="feedback"
-            className="bg-[#efe2d5] px-6 md:px-20 py-16 md:py-20"
+            className="bg-[#efe2d5] px-6 md:px-20 pt-10 pb-16 md:pb-20"
         >
 
             <p className="text-xs tracking-[4px] text-[#9a7b62]">

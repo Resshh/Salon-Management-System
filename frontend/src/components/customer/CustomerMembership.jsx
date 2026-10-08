@@ -62,7 +62,7 @@ function CustomerMembership() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                <div className="border border-[#c9aa91] bg-[#efe2d5] p-6">
+                <div className="dark-card border border-[#c9aa91] bg-[#efe2d5] p-6">
 
                     <p className="text-xs tracking-[2px] text-[#9a7b62]">
                         WELCOME
@@ -74,7 +74,7 @@ function CustomerMembership() {
 
                 </div>
 
-                <div className="border border-[#c9aa91] bg-[#efe2d5] p-6">
+                <div className="dark-card border border-[#c9aa91] bg-[#efe2d5] p-6">
 
                     <p className="text-xs tracking-[2px] text-[#9a7b62]">
                         MEMBERSHIP
@@ -90,7 +90,7 @@ function CustomerMembership() {
 
                 </div>
 
-                <div className="border border-[#c9aa91] bg-[#efe2d5] p-6">
+                <div className="dark-card border border-[#c9aa91] bg-[#efe2d5] p-6">
 
                     <p className="text-xs tracking-[2px] text-[#9a7b62]">
                         LOYALTY POINTS

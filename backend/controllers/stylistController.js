@@ -1,6 +1,51 @@
 const Stylist = require("../models/stylistModel");
 const Service = require("../models/serviceModel");
 
+const { DAY_NAMES, isValidTime } = require("../utils/salonHours");
+
+
+// Checks the working time slots a stylist sends.
+// Returns an error message, or null when everything is fine.
+const checkWorkingSchedule = (workingSchedule) => {
+
+    if (!Array.isArray(workingSchedule)) {
+        return "The working schedule must be a list of time slots";
+    }
+
+    for (const slot of workingSchedule) {
+
+        // The day must be spelled exactly like "Monday"
+        if (!slot || !DAY_NAMES.includes(slot.day)) {
+            return "Every time slot needs a day, for example Monday";
+        }
+
+        if (
+            !isValidTime(slot.startTime) ||
+            !isValidTime(slot.endTime) ||
+            slot.startTime >= slot.endTime
+        ) {
+            return `Times on ${slot.day} must look like 09:30, and the end must be after the start`;
+        }
+
+        // Two slots on the same day must not overlap
+        const overlapping = workingSchedule.find(
+            (other) =>
+                other !== slot &&
+                other.day === slot.day &&
+                other.startTime < slot.endTime &&
+                other.endTime > slot.startTime
+        );
+
+        if (overlapping) {
+            return `Two time slots overlap on ${slot.day}`;
+        }
+
+    }
+
+    return null;
+
+};
+
 const createStylistProfile = async (req, res) => {
     try {
         const {
@@ -19,6 +64,19 @@ const createStylistProfile = async (req, res) => {
             return res.status(400).json({
                 message: "Stylist profile already exists"
             });
+        }
+
+        // Check the working time slots (same rules as when updating)
+        if (workingSchedule) {
+
+            const scheduleError = checkWorkingSchedule(workingSchedule);
+
+            if (scheduleError) {
+                return res.status(400).json({
+                    message: scheduleError
+                });
+            }
+
         }
 
         // Check whether all services exist
@@ -132,6 +190,19 @@ const updateMyStylistProfile = async (req, res) => {
                     });
                 }
             }
+        }
+
+        // Check the working time slots (only when a schedule is sent)
+        if (workingSchedule) {
+
+            const scheduleError = checkWorkingSchedule(workingSchedule);
+
+            if (scheduleError) {
+                return res.status(400).json({
+                    message: scheduleError
+                });
+            }
+
         }
 
         // Update only the fields that were sent,

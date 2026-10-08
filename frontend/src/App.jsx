@@ -7,6 +7,7 @@ import {
 import "./App.css";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import CustomerDashboard from "./components/customer/CustomerDashboard";
 import StylistDashboard from "./components/stylist/StylistDashboard";
@@ -14,9 +15,6 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 
 
 function App() {
-
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
 
   return (
     <BrowserRouter>
@@ -35,33 +33,33 @@ function App() {
           element={<Register />}
         />
 
-        {/* Customer */}
+        {/* Customer  (the * means: /customer and every page under it) */}
         <Route
-          path="/customer"
+          path="/customer/*"
           element={
-            token && role === "customer"
-              ? <CustomerDashboard />
-              : <Navigate to="/login" />
+            <ProtectedRoute role="customer">
+              <CustomerDashboard />
+            </ProtectedRoute>
           }
         />
 
         {/* Stylist */}
         <Route
-          path="/stylist"
+          path="/stylist/*"
           element={
-            token && role === "stylist"
-              ? <StylistDashboard />
-              : <Navigate to="/login" />
+            <ProtectedRoute role="stylist">
+              <StylistDashboard />
+            </ProtectedRoute>
           }
         />
 
         {/* Admin */}
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
-            token && role === "admin"
-              ? <AdminDashboard />
-              : <Navigate to="/login" />
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
           }
         />
 

@@ -20,6 +20,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
 
 const { initSocket } = require('./utils/socket');
 
@@ -27,7 +28,10 @@ const db = require('./connection');
 db();
 
 
-app.use(cors())
+// Only our own frontend may call the API from a browser
+app.use(cors({
+    origin: require('./utils/allowedOrigin')
+}));
 // "verify" keeps a copy of the raw request body.
 // The Razorpay webhook needs it to check the signature.
 app.use(express.json({
@@ -50,6 +54,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/coupon", couponRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
 // Socket.IO needs the plain HTTP server, so we create it ourselves
 // and let both Express (the API) and Socket.IO (live notifications) use it

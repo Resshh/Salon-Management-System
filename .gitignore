@@ -9,3 +9,6 @@ docs/
 
 # Requirement documents
 *.pdf
+
+# Project report
+*.docx

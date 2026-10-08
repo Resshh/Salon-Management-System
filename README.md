@@ -96,9 +96,14 @@ EMAIL_PASSWORD=your_gmail_app_password
 RAZORPAY_KEY_ID=rzp_test_xxxxx
 RAZORPAY_KEY_SECRET=xxxxx
 RAZORPAY_WEBHOOK_SECRET=xxxxx
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=choose_a_strong_password
+CLIENT_URL=https://your-frontend-address
 ```
 
 `RAZORPAY_WEBHOOK_SECRET` is only needed if you set up the Razorpay webhook.
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` are used once, by `createAdmin.js`.
+`CLIENT_URL` is only needed when the frontend is hosted; pages on `localhost` are always allowed.
 
 Create the admin account, then start the server:
 

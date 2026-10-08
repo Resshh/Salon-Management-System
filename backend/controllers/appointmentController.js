@@ -3,10 +3,21 @@ const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
 const Service = require("../models/serviceModel");
 const ServiceHistory = require("../models/serviceHistoryModel");
-const SalonSetting = require("../models/salonSettingModel");
 
 const sendNotification = require("../utils/notificationService");
 const { refundIfPaid } = require("./paymentController");
+
+// Date, time and opening-hours helpers shared with clock in and the dashboard
+const {
+    DAY_NAMES,
+    isValidDate,
+    isValidTime,
+    toMinutes,
+    toTime,
+    getToday,
+    getTimeNow,
+    isSalonOpen
+} = require("../utils/salonHours");
 
 
 // ======================================================
@@ -36,14 +47,16 @@ const isWithinWorkingSchedule = (
     const appointmentDay =
         dayNames[appointmentDate.getDay()];
 
-    const schedule =
-        stylist.workingSchedule.find(
+    // A stylist can have several working time slots on one day
+    // (for example 10:00-13:00 and 15:00-18:00), so collect all of them
+    const daySlots =
+        stylist.workingSchedule.filter(
             (item) =>
                 item.day.toLowerCase() ===
                 appointmentDay.toLowerCase()
         );
 
-    if (!schedule) {
+    if (daySlots.length === 0) {
 
         return {
             valid: false,
@@ -53,22 +66,23 @@ const isWithinWorkingSchedule = (
 
     }
 
-    if (startTime < schedule.startTime) {
+    // The appointment must fit completely inside ONE of those slots
+    const fits = daySlots.some(
+        (slot) =>
+            startTime >= slot.startTime &&
+            endTime <= slot.endTime
+    );
+
+    if (!fits) {
+
+        const hours = daySlots
+            .map((slot) => `${slot.startTime} - ${slot.endTime}`)
+            .join(", ");
 
         return {
             valid: false,
             message:
-                `Stylist starts working at ${schedule.startTime} on ${appointmentDay}`
-        };
-
-    }
-
-    if (endTime > schedule.endTime) {
-
-        return {
-            valid: false,
-            message:
-                `Stylist finishes working at ${schedule.endTime} on ${appointmentDay}`
+                `Stylist works on ${appointmentDay} at: ${hours}`
         };
 
     }
@@ -81,72 +95,30 @@ const isWithinWorkingSchedule = (
 
 
 // ======================================================
-// CHECK SALON WORKING HOURS AND HOLIDAYS
+// INPUT CHECK
+// Never trust what the browser sends: the date and time must have the exact
+// shape the rest of this file relies on ("2026-10-07" and "09:30").
+// The shape checks themselves are in utils/salonHours.js.
 // ======================================================
 
-const DAY_NAMES = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-];
+// Checks a date and start time sent by the browser.
+// Returns an error message, or null when everything is fine.
+const checkDateAndTime = (date, startTime) => {
 
-const isSalonOpen = async (date, startTime, endTime) => {
-
-    const settings = await SalonSetting.findOne();
-
-    // Admin has not saved any settings yet, so nothing to check
-    if (!settings) {
-        return { valid: true };
+    if (!isValidDate(date) || !isValidTime(startTime)) {
+        return "Date must look like 2026-10-07 and time like 09:30";
     }
 
-    const holiday = settings.holidays.find(
-        (item) => item.date === date
-    );
-
-    if (holiday) {
-        return {
-            valid: false,
-            message: `Salon is closed on ${date} (${holiday.reason || "Holiday"})`
-        };
+    if (date < getToday()) {
+        return "You cannot choose a date in the past";
     }
 
-    const dayName =
-        DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
-
-    if (settings.closedDays.includes(dayName)) {
-        return {
-            valid: false,
-            message: `Salon is closed on ${dayName}`
-        };
+    if (date === getToday() && startTime <= getTimeNow()) {
+        return "That time has already passed today";
     }
 
-    if (startTime < settings.openTime || endTime > settings.closeTime) {
-        return {
-            valid: false,
-            message: `Salon is open from ${settings.openTime} to ${settings.closeTime}`
-        };
-    }
+    return null;
 
-    return { valid: true };
-
-};
-
-
-// "09:30" -> 570 minutes
-const toMinutes = (time) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-};
-
-// 570 minutes -> "09:30"
-const toTime = (totalMinutes) => {
-    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
-    const minutes = String(totalMinutes % 60).padStart(2, "0");
-    return `${hours}:${minutes}`;
 };
 
 
@@ -167,6 +139,20 @@ const getAvailableSlots = async (req, res) => {
             });
         }
 
+        if (!isValidDate(date)) {
+            return res.status(400).json({
+                message: "Date must look like 2026-10-07"
+            });
+        }
+
+        // No slots for a day that is already over
+        if (date < getToday()) {
+            return res.status(200).json({
+                message: "That date is in the past",
+                slots: []
+            });
+        }
+
         const existingStylist = await Stylist.findById(stylist);
         const existingService = await Service.findById(service);
 
@@ -180,11 +166,12 @@ const getAvailableSlots = async (req, res) => {
         const dayName =
             DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
 
-        const schedule = existingStylist.workingSchedule.find(
+        // All the working time slots of that day (there can be more than one)
+        const daySlots = existingStylist.workingSchedule.filter(
             (item) => item.day.toLowerCase() === dayName.toLowerCase()
         );
 
-        if (!schedule) {
+        if (daySlots.length === 0) {
             return res.status(200).json({
                 message: `Stylist is not available on ${dayName}`,
                 slots: []
@@ -201,10 +188,14 @@ const getAvailableSlots = async (req, res) => {
         const slots = [];
 
         const duration = existingService.duration;
-        const dayStart = toMinutes(schedule.startTime);
-        const dayEnd = toMinutes(schedule.endTime);
 
-        // Try a slot every 30 minutes
+        // Go through each working time slot of the day
+        for (const workSlot of daySlots) {
+
+        const dayStart = toMinutes(workSlot.startTime);
+        const dayEnd = toMinutes(workSlot.endTime);
+
+        // Try an appointment every 30 minutes inside this working slot
         for (
             let start = dayStart;
             start + duration <= dayEnd;
@@ -213,6 +204,11 @@ const getAvailableSlots = async (req, res) => {
 
             const startTime = toTime(start);
             const endTime = toTime(start + duration);
+
+            // Today: skip times that have already passed
+            if (date === getToday() && startTime <= getTimeNow()) {
+                continue;
+            }
 
             const salonCheck = await isSalonOpen(date, startTime, endTime);
 
@@ -232,6 +228,11 @@ const getAvailableSlots = async (req, res) => {
             }
 
         }
+
+        }
+
+        // Show the earliest time first
+        slots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         return res.status(200).json({
             message: "Available slots fetched successfully",
@@ -260,12 +261,13 @@ const createAppointment = async (req, res) => {
 
     try {
 
+        // The end time is NOT taken from the browser. It is worked out below
+        // from the service duration, so nobody can book a shorter or longer time.
         const {
             stylist,
             service,
             date,
-            startTime,
-            endTime
+            startTime
         } = req.body;
 
 
@@ -273,23 +275,25 @@ const createAppointment = async (req, res) => {
             !stylist ||
             !service ||
             !date ||
-            !startTime ||
-            !endTime
+            !startTime
         ) {
 
             return res.status(400).json({
                 message:
-                    "Stylist, service, date, start time and end time are required"
+                    "Stylist, service, date and start time are required"
             });
 
         }
 
 
-        if (startTime >= endTime) {
+        const inputError =
+            checkDateAndTime(date, startTime);
+
+        if (inputError) {
 
             return res.status(400).json({
                 message:
-                    "End time must be after start time"
+                    inputError
             });
 
         }
@@ -348,6 +352,23 @@ const createAppointment = async (req, res) => {
             });
 
         }
+
+        // The admin has hidden this service
+        if (!existingService.availability) {
+
+            return res.status(400).json({
+                message:
+                    "This service is not available right now"
+            });
+
+        }
+
+        // End time = start time + how long the service takes
+        const endTime =
+            toTime(
+                toMinutes(startTime) +
+                existingService.duration
+            );
 
 
         // ------------------------------------------
@@ -455,6 +476,10 @@ const createAppointment = async (req, res) => {
 
         const newAppointment =
             new Appointment({
+
+                // the moment the customer asked (used for waiting time)
+                requestedAt:
+                    new Date(),
 
                 customer,
 
@@ -631,6 +656,10 @@ const approveAppointment = async (req, res) => {
         appointment.status =
             "approved";
 
+        // remember when the stylist answered (used for response time)
+        appointment.respondedAt =
+            new Date();
+
         await appointment.save();
 
 
@@ -647,7 +676,10 @@ const approveAppointment = async (req, res) => {
                 "Appointment Approved",
 
             message:
-                "Your appointment has been approved. Please pay online from My Appointments, or pay at the salon.",
+                // Do not ask for payment again if it is already paid
+                appointment.paymentStatus === "paid"
+                    ? "Your appointment has been approved."
+                    : "Your appointment has been approved. Please pay online from My Appointments, or pay at the salon.",
 
             type:
                 "approval",
@@ -656,7 +688,7 @@ const approveAppointment = async (req, res) => {
                 "Your Appointment Has Been Approved - Beauté Salon",
 
             emailText:
-                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved. Please log in to pay online from My Appointments, or pay at the salon. We look forward to seeing you at Beauté Salon.`
+                `Your appointment on ${appointment.date} from ${appointment.startTime} to ${appointment.endTime} has been approved. If you have not paid yet, you can pay online from My Appointments or at the salon. We look forward to seeing you at Beauté Salon.`
 
         });
 
@@ -756,8 +788,31 @@ const rejectAppointment = async (req, res) => {
         }
 
 
+        // ------------------------------------------
+        // REFUND FIRST (only if it was already paid)
+        // This happens when a paid appointment was rescheduled
+        // and the stylist rejects the new time.
+        // ------------------------------------------
+
+        const refund =
+            await refundIfPaid(appointment, "rejected");
+
+        if (!refund.ok) {
+
+            return res.status(500).json({
+                message:
+                    refund.message
+            });
+
+        }
+
+
         appointment.status =
             "rejected";
+
+        // remember when the stylist answered (used for response time)
+        appointment.respondedAt =
+            new Date();
 
         await appointment.save();
 
@@ -1149,28 +1204,31 @@ const rescheduleAppointment = async (req, res) => {
             req.user.userId;
 
 
+        // The end time is worked out on the server from the service duration
         const {
             date,
-            startTime,
-            endTime
+            startTime
         } = req.body;
 
 
-        if (!date || !startTime || !endTime) {
+        if (!date || !startTime) {
 
             return res.status(400).json({
                 message:
-                    "Date, start time and end time are required"
+                    "Date and start time are required"
             });
 
         }
 
 
-        if (startTime >= endTime) {
+        const inputError =
+            checkDateAndTime(date, startTime);
+
+        if (inputError) {
 
             return res.status(400).json({
                 message:
-                    "End time must be after start time"
+                    inputError
             });
 
         }
@@ -1230,6 +1288,19 @@ const rescheduleAppointment = async (req, res) => {
             });
 
         }
+
+
+        // End time = start time + how long the service takes
+        const bookedService =
+            await Service.findById(
+                appointment.service
+            );
+
+        const endTime =
+            toTime(
+                toMinutes(startTime) +
+                (bookedService ? bookedService.duration : 45)
+            );
 
 
         // ------------------------------------------
@@ -1330,6 +1401,19 @@ const rescheduleAppointment = async (req, res) => {
         appointment.endTime =
             endTime;
 
+        // The stylist approved the OLD time, not the new one.
+        // So the appointment goes back to "pending" and must be approved again.
+        // (A payment that was already made stays on the appointment.)
+        appointment.status =
+            "pending";
+
+        // The waiting time starts again from now
+        appointment.requestedAt =
+            new Date();
+
+        appointment.respondedAt =
+            undefined;
+
         await appointment.save();
 
 
@@ -1346,7 +1430,7 @@ const rescheduleAppointment = async (req, res) => {
                 "Appointment Rescheduled",
 
             message:
-                "A customer has rescheduled an appointment",
+                "A customer has rescheduled an appointment. Please approve or reject the new time.",
 
             type:
                 "reschedule",
@@ -1355,7 +1439,7 @@ const rescheduleAppointment = async (req, res) => {
                 "Appointment Rescheduled - Beauté Salon",
 
             emailText:
-                `A customer has rescheduled an appointment to ${date} at ${startTime} - ${endTime}.`
+                `A customer has rescheduled an appointment to ${date} at ${startTime} - ${endTime}. Please log in to approve or reject the new time.`
 
         });
 
@@ -1373,7 +1457,7 @@ const rescheduleAppointment = async (req, res) => {
                 "Appointment Rescheduled",
 
             message:
-                "Your appointment has been rescheduled",
+                "Your appointment has been rescheduled. It is waiting for the stylist to approve the new time.",
 
             type:
                 "reschedule",
@@ -1382,7 +1466,7 @@ const rescheduleAppointment = async (req, res) => {
                 "Your Appointment Has Been Rescheduled - Beauté Salon",
 
             emailText:
-                `Your appointment has been rescheduled to ${date} at ${startTime} - ${endTime}.`
+                `Your appointment has been rescheduled to ${date} at ${startTime} - ${endTime}. It is waiting for the stylist to approve the new time.`
 
         });
 
@@ -1629,7 +1713,8 @@ const updateAppointmentByAdmin = async (req, res) => {
 
     try {
 
-        const { status, date, startTime, endTime } = req.body;
+        // For a reschedule the end time is worked out below, not taken from the browser
+        const { status, date, startTime } = req.body;
 
         const appointment = await Appointment.findById(req.params.id);
 
@@ -1676,6 +1761,11 @@ const updateAppointmentByAdmin = async (req, res) => {
 
             appointment.status = status;
 
+            // the admin answered a pending request
+            if (status === "approved" && !appointment.respondedAt) {
+                appointment.respondedAt = new Date();
+            }
+
             if (status === "approved") {
                 title = "Appointment Approved";
                 type = "approval";
@@ -1688,17 +1778,27 @@ const updateAppointmentByAdmin = async (req, res) => {
 
             // ---------- RESCHEDULE ----------
 
-            if (!date || !startTime || !endTime) {
+            if (!date || !startTime) {
                 return res.status(400).json({
-                    message: "Date, start time and end time are required"
+                    message: "Date and start time are required"
                 });
             }
 
-            if (startTime >= endTime) {
+            const inputError = checkDateAndTime(date, startTime);
+
+            if (inputError) {
                 return res.status(400).json({
-                    message: "End time must be after start time"
+                    message: inputError
                 });
             }
+
+            // End time = start time + how long the service takes
+            const bookedService = await Service.findById(appointment.service);
+
+            const endTime = toTime(
+                toMinutes(startTime) +
+                (bookedService ? bookedService.duration : 45)
+            );
 
             const stylist = await Stylist.findById(appointment.stylist);
 

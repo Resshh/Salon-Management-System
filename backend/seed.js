@@ -137,6 +137,13 @@ const seed = async () => {
 
     try {
 
+        // The test accounts all share one well-known password,
+        // so this script must never run against a live database
+        if (process.env.NODE_ENV === "production") {
+            console.error("The seed script is for testing only. It will not run in production.");
+            process.exit(1);
+        }
+
         await db();
 
         const hashedPassword = await bcrypt.hash(PASSWORD, 10);

@@ -1,6 +1,8 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 
+const allowedOrigin = require("./allowedOrigin");
+
 // The Socket.IO server. It is created once, when the app starts.
 let io = null;
 
@@ -10,7 +12,7 @@ const initSocket = (server) => {
 
     io = new Server(server, {
         cors: {
-            origin: "*"
+            origin: allowedOrigin
         }
     });
 

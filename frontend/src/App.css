@@ -510,148 +510,619 @@ body {
 }
 /* Customer Dashboard */
 
-.customer-dashboard {
-    min-height: 100vh;
-    background-color: #f7efe5;
-    color: #321d1d;
+
+/* =========================
+   FRONT PAGES (LOGIN + REGISTER)
+   background image
+========================= */
+
+.login-page,
+.register-page {
+  position: relative;
 }
 
-/* Navbar */
+/* Wide screens: the image replaces the plain cream and maroon halves */
+@media (min-width: 701px) {
 
-.customer-navbar {
-    height: 80px;
-    padding: 0 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #d8c6b6;
+  .login-page,
+  .register-page {
+    background-image: url("./assets/background.png");
+    background-size: cover;
+    background-position: center;
+  }
+
+  .login-right,
+  .register-right {
+    background-color: transparent;
+  }
+
+  /* A soft shadow lifts the form off the picture */
+  .login-box,
+  .register-box {
+    box-shadow: 0 12px 35px rgba(50, 29, 29, 0.3);
+  }
+
 }
 
-.customer-navbar h1 {
-    margin: 0;
-    color: #5a182b;
-    font-size: 32px;
-    font-weight: 400;
-    letter-spacing: 5px;
+
+
+/* =========================
+   LOGIN BOX: FROSTED GLASS LOOK
+   (these rules come last, so they replace the plain look above)
+========================= */
+
+.login-box {
+  /* see-through, with the picture blurred behind it */
+  background-color: rgba(247, 239, 229, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 22px;
+
+  padding: 40px 32px 34px;
+
+  box-shadow: 0 18px 45px rgba(50, 29, 29, 0.28);
 }
 
-.customer-links {
-    display: flex;
-    gap: 30px;
+.login-box h2 {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
 }
 
-.customer-links span {
-    color: #6e5545;
-    font-size: 14px;
-    cursor: pointer;
+.login-subtitle {
+  text-align: center;
+  margin: 14px 0 26px;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #a05a6c;
 }
 
-.customer-links span:hover {
-    color: #5a182b;
+.login-box label {
+  color: #321d1d;
+  font-size: 16px;
 }
 
-/* Hero */
-
-.customer-hero {
-    padding: 100px 80px;
-    background-color: #f7efe5;
+/* The wrapper lets us put icons on top of the input */
+.input-wrap {
+  position: relative;
+  margin-bottom: 18px;
 }
 
-.customer-hero > p:first-child {
-    color: #9a7b62;
-    letter-spacing: 4px;
-    font-size: 13px;
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 20px;
+  height: 20px;
+  color: #6e5545;
 }
 
-.customer-hero h2 {
-    margin: 20px 0;
-    color: #5a182b;
-    font-size: 65px;
-    line-height: 1;
-    font-weight: 400;
+.login-box .input-wrap input {
+  margin-bottom: 0;
+  padding: 13px 44px;
+
+  background-color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-.hero-text {
-    color: #6e5545;
-    font-size: 18px;
-    line-height: 1.6;
+.login-box .input-wrap input:focus {
+  border-color: #5a182b;
 }
 
-.customer-hero button,
-.appointment-box button {
-    margin-top: 20px;
-    padding: 14px 28px;
-    border: none;
-    background-color: #5a182b;
-    color: #f7efe5;
-    letter-spacing: 2px;
-    cursor: pointer;
+/* The eye is a button, so undo the big maroon button look for it */
+.login-box .eye-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 8px;
+
+  background-color: transparent;
+  color: #321d1d;
+  border-radius: 8px;
 }
 
-.customer-hero button:hover,
-.appointment-box button:hover {
-    background-color: #321d1d;
+.login-box .eye-button:hover {
+  background-color: rgba(90, 24, 43, 0.1);
 }
 
-/* Services */
-
-.services-section {
-    padding: 70px 80px;
-    background-color: #efe2d5;
+.login-box .eye-button svg {
+  width: 20px;
+  height: 20px;
 }
 
-.services-section > p,
-.appointment-section > p {
-    color: #9a7b62;
-    letter-spacing: 4px;
-    font-size: 12px;
+/* The Login button */
+.login-box form > button {
+  margin-top: 12px;
+  padding: 14px;
+
+  border-radius: 12px;
+  background-color: #7a2238;
+
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+
+  box-shadow: 0 6px 16px rgba(90, 24, 43, 0.3);
 }
 
-.services-section h2,
-.appointment-section h2 {
-    color: #5a182b;
+.login-box form > button:hover {
+  background-color: #5a182b;
+}
+
+/* ----- OR ----- with a line on each side */
+.or-line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  margin-top: 26px;
+  color: #321d1d;
+  font-size: 15px;
+}
+
+.or-line::before,
+.or-line::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: rgba(50, 29, 29, 0.35);
+}
+
+.login-box .register-text {
+  margin-top: 20px;
+  font-size: 15px;
+  color: #321d1d;
+}
+
+
+/* =========================
+   REGISTER BOX: SAME FROSTED GLASS LOOK AS THE LOGIN BOX
+========================= */
+
+.register-box {
+  background-color: rgba(247, 239, 229, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 22px;
+
+  padding: 34px 32px 30px;
+
+  box-shadow: 0 18px 45px rgba(50, 29, 29, 0.28);
+}
+
+.register-box h2 {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.register-subtitle {
+  text-align: center;
+  margin: 12px 0 22px;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #a05a6c;
+}
+
+.register-box label {
+  color: #321d1d;
+  font-size: 15px;
+}
+
+.register-box .input-wrap {
+  margin-bottom: 14px;
+}
+
+/* Every field: rounded, light and slightly see-through */
+.register-box input,
+.register-box select {
+  margin-bottom: 14px;
+  padding: 11px 14px;
+
+  background-color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  outline: none;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  color: #321d1d;
+}
+
+.register-box input:focus,
+.register-box select:focus {
+  border-color: #5a182b;
+}
+
+/* Fields with an icon need room on the left (and right, for the eye) */
+.register-box .input-wrap input {
+  margin-bottom: 0;
+  padding: 11px 44px;
+}
+
+.register-box .eye-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 8px;
+
+  background-color: transparent;
+  color: #321d1d;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.register-box .eye-button:hover {
+  background-color: rgba(90, 24, 43, 0.1);
+}
+
+.register-box .eye-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The Create Account button */
+.register-box form > button {
+  margin-top: 8px;
+  padding: 14px;
+
+  border-radius: 12px;
+  background-color: #7a2238;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+
+  box-shadow: 0 6px 16px rgba(90, 24, 43, 0.3);
+}
+
+.register-box form > button:hover {
+  background-color: #5a182b;
+}
+
+.register-box .or-line {
+  margin-top: 22px;
+}
+
+.register-box .login-text {
+  margin-top: 16px;
+  font-size: 15px;
+  color: #321d1d;
+}
+
+
+/* =========================
+   SOFT FLORAL THEME
+   Used by: the customer, stylist and admin dashboards.
+   Add the class "soft-theme" to a wrapper and everything inside follows it.
+========================= */
+
+.soft-theme {
+  background-color: #f7efe5;
+  background-image: url("./assets/background-soft.png");
+  background-size: cover;
+  background-position: center bottom;
+
+  /* The picture stays still while the page scrolls over it */
+  background-attachment: fixed;
+}
+
+/* Sections had their own flat colours. Make them see-through so the picture shows. */
+.soft-theme section {
+  background-color: transparent;
+}
+
+/* A thin decorative line under every section heading */
+.soft-theme section h2::after {
+  content: "";
+  display: block;
+  width: 130px;
+  height: 1px;
+  margin-top: 16px;
+  background: linear-gradient(to right, transparent, #c98a94, transparent);
+}
+
+/* Cards and form boxes.
+   [class~="border"] means: any element that has the class "border".
+   Every card in the dashboard has it, so one rule restyles them all. */
+.soft-theme section div[class~="border"]:not([role="dialog"]):not(.dark-card),
+.soft-theme section form[class~="border"] {
+  background-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(201, 170, 145, 0.45);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(90, 24, 43, 0.06);
+}
+
+/* Fields and buttons get the same rounded look as the login page */
+.soft-theme section input,
+.soft-theme section select,
+.soft-theme section textarea {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.soft-theme section button,
+.soft-theme section a[class*="bg-"] {
+  border-radius: 10px;
+}
+
+/* Pop-up boxes (pay, reschedule, confirm) stay solid so they are easy to read */
+.soft-theme [role="dialog"] {
+  border-radius: 16px;
+}
+
+
+/* =========================
+   CUSTOMER DASHBOARD DESIGN  (class "dash" on the dashboard)
+========================= */
+
+/* ----- Maroon cards (membership and services) ----- */
+.dash .dark-card {
+  background-color: #6b1d33;
+
+  border-color: rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(50, 29, 29, 0.28);
+}
+
+/* every text inside a maroon card becomes light */
+.dash .dark-card * {
+  color: #fbf3ec;
+}
+
+/* ----- Footer ----- */
+.dash-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-top: 40px;
+  padding: 28px 5rem;
+
+  background-color: #5a182b;
+  color: #f7efe5;
+}
+
+.dash-footer-brand {
+  font-size: 22px;
+  letter-spacing: 5px;
+}
+
+.dash-footer-tagline {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #e3c9bd;
+}
+
+.dash-footer-note {
+  font-size: 13px;
+  color: #e3c9bd;
+}
+
+@media (max-width: 700px) {
+
+  .dash-footer {
+    padding: 24px 1.5rem;
+  }
+
+}
+
+
+/* =========================
+   NAVBAR THAT STAYS AT THE TOP WHILE SCROLLING (all three dashboards)
+========================= */
+
+@media (min-width: 768px) {
+
+  .sticky-nav {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+
+    /* slightly see-through cream, with the page blurred behind it */
+    background-color: rgba(247, 239, 229, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+}
+
+/* When a navbar link jumps to a section, stop a little above it,
+   so the sticky navbar does not cover the section heading */
+.soft-theme section,
+.soft-theme [id] {
+  scroll-margin-top: 90px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+/* =========================
+   PHONES (screens up to 700px wide)
+   These rules come last so they win over everything above.
+========================= */
+
+@media (max-width: 700px) {
+
+  /* Register page: the two halves stack, like the login page */
+  .register-page {
+    display: block;
+  }
+
+  .register-left {
+    width: 100%;
+    padding: 30px 24px 40px;
+  }
+
+  .register-content {
+    margin-top: 50px;
+  }
+
+  .register-content h2 {
     font-size: 42px;
-    font-weight: 400;
-    margin: 15px 0 35px;
+  }
+
+  .register-right {
+    width: 100%;
+    min-height: auto;
+    padding: 36px 16px;
+  }
+
+  /* Login and register boxes: full width, less padding, and more solid
+     because on phones they sit on plain maroon instead of the picture */
+  .login-box,
+  .register-box {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+    padding: 28px 20px;
+    background-color: rgba(247, 239, 229, 0.94);
+  }
+
+  /* Dashboards: a fixed background is slow and jumpy on phones, so let it scroll */
+  .soft-theme {
+    background-attachment: scroll;
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+  }
+
+  /* Navbar links: a little more room to tap */
+  .sticky-nav a,
+  .sticky-nav span,
+  .sticky-nav button {
+    padding: 4px 2px;
+  }
+
 }
 
-.service-cards {
-    display: flex;
-    gap: 25px;
+
+/* =========================
+   NAVBAR LINKS (each one opens its own page)
+========================= */
+
+.nav-link {
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
 }
 
-.service-card {
-    width: 30%;
-    min-height: 180px;
-    padding: 30px;
-    background-color: #f7efe5;
-    border: 1px solid #d8c6b6;
+.nav-link:hover {
+  color: #5a182b;
 }
 
-.service-card h3 {
-    color: #5a182b;
-    font-size: 24px;
-    font-weight: 400;
+/* the page we are on */
+.nav-link.active {
+  color: #5a182b;
+  border-bottom-color: #5a182b;
 }
 
-.service-card p {
-    color: #6e5545;
-    line-height: 1.5;
+
+/* =========================
+   STYLIST: BIG CLOCK IN / CLOCK OUT BANNER
+========================= */
+
+.clock-card {
+  padding: 32px;
+  border-radius: 18px;
+
+  background-color: #5a182b;
+  color: #f7efe5;
+
+  box-shadow: 0 14px 34px rgba(50, 29, 29, 0.3);
 }
 
-/* Appointment */
-
-.appointment-section {
-    padding: 70px 80px;
+.clock-status {
+  font-size: 13px;
+  letter-spacing: 3px;
 }
 
-.appointment-box {
-    padding: 35px;
-    border: 1px solid #c9aa91;
-    background-color: #f7efe5;
+.clock-status.on-duty {
+  color: #9be3a8;
 }
 
-.appointment-box p {
-    color: #6e5545;
-    font-size: 17px;
+.clock-status.off-duty {
+  color: #e3c9bd;
+}
+
+.clock-note {
+  color: #e3c9bd;
+}
+
+/* a large button that is hard to miss */
+.clock-card .clock-button {
+  min-width: 220px;
+  padding: 20px 40px;
+
+  border: 2px solid #f7efe5;
+  border-radius: 14px;
+
+  background-color: #f7efe5;
+  color: #5a182b;
+
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+}
+
+.clock-card .clock-button:hover {
+  background-color: #ffffff;
+}
+
+/* salon closed: the button is greyed out and cannot be pressed */
+.clock-card .clock-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.clock-card .clock-button:disabled:hover {
+  background-color: #f7efe5;
+}
+
+/* clock out: outlined, so the two states look different */
+.clock-card .clock-button.clock-out {
+  background-color: transparent;
+  color: #f7efe5;
+}
+
+.clock-card .clock-button.clock-out:hover {
+  background-color: rgba(247, 239, 229, 0.12);
+}
+
+@media (max-width: 700px) {
+
+  .clock-card {
+    padding: 24px;
+  }
+
+  .clock-card .clock-button {
+    width: 100%;
+  }
+
 }

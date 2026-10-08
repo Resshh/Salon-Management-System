@@ -7,7 +7,6 @@ const roleMiddleware = require("../middleware/roleMiddleware");
 
 const {
     getCustomerHistoryForStylist,
-    createServiceHistory,
     getCustomerHistory,
     getStylistHistory,
     updateServiceNotes
@@ -15,14 +14,6 @@ const {
 
 
 // Create service history
-router.post(
-    "/",
-    authMiddleware,
-    roleMiddleware("stylist"),
-    createServiceHistory
-);
-
-
 // Customer history
 router.get(
     "/customer",

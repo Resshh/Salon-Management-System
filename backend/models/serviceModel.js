@@ -14,14 +14,18 @@ const serviceSchema = new mongoose.Schema(
             trim: true
         },
 
+        // minutes
         duration: {
             type: Number,
-            required: true
+            required: true,
+            min: 5,
+            max: 600
         },
 
         price: {
             type: Number,
-            required: true
+            required: true,
+            min: 0
         },
 
         availability: {

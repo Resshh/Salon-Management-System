@@ -52,7 +52,7 @@ function CustomerServices() {
 
                         <div
                             key={service._id}
-                            className="border border-[#d8c6b6] bg-[#f7efe5] p-8"
+                            className="dark-card border border-[#d8c6b6] bg-[#f7efe5] p-8"
                         >
 
                             <h3 className="text-2xl font-normal text-[#5a182b]">
@@ -63,13 +63,19 @@ function CustomerServices() {
                                 {service.description}
                             </p>
 
-                            <p className="mt-4 text-[#5a182b]">
-                                ₹{service.price}
-                            </p>
+                            {/* price on the left, duration on the right */}
 
-                            <p className="mt-2 text-sm text-[#8b6d57]">
-                                {service.duration} minutes
-                            </p>
+                            <div className="mt-6 flex items-baseline justify-between gap-4">
+
+                                <p className="text-3xl text-[#5a182b]">
+                                    ₹{service.price}
+                                </p>
+
+                                <p className="text-sm text-[#8b6d57]">
+                                    {service.duration} minutes
+                                </p>
+
+                            </div>
 
                         </div>
 
