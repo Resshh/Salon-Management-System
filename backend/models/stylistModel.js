@@ -15,6 +15,14 @@ const stylistSchema = new mongoose.Schema(
             trim: true
         },
 
+        // Profile photo, saved as text (a "data URL": data:image/jpeg;base64,...).
+        // select: false = left out of every query unless we ask with .select("+photo"),
+        // because it is long and most pages do not need it.
+        photo: {
+            type: String,
+            select: false
+        },
+
         services: [
             {
                 type: mongoose.Schema.Types.ObjectId,

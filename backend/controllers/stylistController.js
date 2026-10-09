@@ -119,6 +119,7 @@ const getMyStylistProfile = async (req, res) => {
         const user = req.user.userId;
 
         const stylist = await Stylist.findOne({ user })
+            .select("+photo")
             .populate("user", "name email phone gender dateOfBirth")
             .populate("services", "name description duration price");
 
@@ -144,6 +145,7 @@ const getMyStylistProfile = async (req, res) => {
 const getAllStylists = async (req, res) => {
     try {
         const stylists = await Stylist.find()
+            .select("+photo")
             .populate("user", "name email phone")
             .populate("services", "name price duration");
 
@@ -168,7 +170,8 @@ const updateMyStylistProfile = async (req, res) => {
         const {
             specialization,
             services,
-            workingSchedule
+            workingSchedule,
+            photo
         } = req.body;
 
         const stylist = await Stylist.findOne({ user });
@@ -177,6 +180,23 @@ const updateMyStylistProfile = async (req, res) => {
             return res.status(404).json({
                 message: "Stylist profile not found"
             });
+        }
+
+        // Check the photo (only when a photo is sent).
+        // The browser already shrinks it, but never trust the browser:
+        // it must be a JPEG picture saved as text, and not too long.
+        if (photo !== undefined) {
+
+            if (
+                typeof photo !== "string" ||
+                !photo.startsWith("data:image/jpeg;base64,") ||
+                photo.length > 90000
+            ) {
+                return res.status(400).json({
+                    message: "The photo must be a small JPEG image"
+                });
+            }
+
         }
 
         // Check services (only when services are sent)
@@ -210,6 +230,12 @@ const updateMyStylistProfile = async (req, res) => {
         stylist.specialization = specialization ?? stylist.specialization;
         stylist.services = services ?? stylist.services;
         stylist.workingSchedule = workingSchedule ?? stylist.workingSchedule;
+
+        // The photo was not loaded above (select: false), so it is only
+        // touched when a new one was sent. Otherwise the old photo stays.
+        if (photo !== undefined) {
+            stylist.photo = photo;
+        }
 
         await stylist.save();
 

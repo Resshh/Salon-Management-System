@@ -13,6 +13,9 @@ function StylistProfile() {
     const [specialization, setSpecialization] = useState("");
     const [selectedServices, setSelectedServices] = useState([]);
 
+    // Newly chosen photo, as text ("" = no new photo chosen)
+    const [photo, setPhoto] = useState("");
+
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -121,6 +124,62 @@ function StylistProfile() {
     };
 
 
+    // ================= CHOOSE PHOTO =================
+
+    // Runs when the stylist picks a file.
+    // A phone photo is several MB, far too big to save in the database,
+    // so the browser first shrinks it to a 300 x 300 square.
+    const choosePhoto = (e) => {
+
+        const file = e.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        const image = new Image();
+
+        // Runs once the browser has finished reading the picture
+        image.onload = () => {
+
+            // A canvas is an invisible drawing board
+            const canvas = document.createElement("canvas");
+
+            canvas.width = 300;
+            canvas.height = 300;
+
+            // Cut the biggest square out of the middle of the picture
+            const side = Math.min(image.width, image.height);
+            const left = (image.width - side) / 2;
+            const top = (image.height - side) / 2;
+
+            // Draw that square onto the canvas, scaled down to 300 x 300
+            canvas
+                .getContext("2d")
+                .drawImage(image, left, top, side, side, 0, 0, 300, 300);
+
+            // Turn the drawing into text: "data:image/jpeg;base64,..."
+            setPhoto(canvas.toDataURL("image/jpeg", 0.8));
+
+            // Free the memory of the temporary address
+            URL.revokeObjectURL(image.src);
+
+        };
+
+        // Runs when the file is not a picture
+        image.onerror = () => {
+            setMessage({
+                type: "error",
+                text: "Please choose an image file."
+            });
+        };
+
+        // Give the file a temporary address so the browser can read it
+        image.src = URL.createObjectURL(file);
+
+    };
+
+
     // ================= UPDATE PROFILE =================
 
     const updateProfile = async (e) => {
@@ -129,12 +188,19 @@ function StylistProfile() {
 
         try {
 
+            const data = {
+                specialization,
+                services: selectedServices
+            };
+
+            // Send the photo only when a new one was chosen
+            if (photo) {
+                data.photo = photo;
+            }
+
             await axios.put(
                 "http://localhost:5000/api/stylist/profile",
-                {
-                    specialization,
-                    services: selectedServices
-                },
+                data,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -150,6 +216,7 @@ function StylistProfile() {
             });
 
             setEditing(false);
+            setPhoto("");
 
             getProfile();
 
@@ -236,7 +303,11 @@ function StylistProfile() {
                 </h2>
 
                 <button
-                    onClick={() => setEditing(!editing)}
+                    onClick={() => {
+                        // Opening or cancelling the form forgets an unsaved photo
+                        setPhoto("");
+                        setEditing(!editing);
+                    }}
                     className="bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
                 >
                     {editing ? "CANCEL" : "EDIT PROFILE"}
@@ -250,6 +321,24 @@ function StylistProfile() {
             {!editing ? (
 
                 <div className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-8">
+
+                    {/* Round picture: the photo, or the first letter of the name */}
+
+                    {profile.photo ? (
+
+                        <img
+                            src={profile.photo}
+                            alt={profile.user?.name}
+                            className="mb-5 h-28 w-28 rounded-full object-cover"
+                        />
+
+                    ) : (
+
+                        <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-full bg-[#d8c6b6] text-5xl text-[#5a182b]">
+                            {profile.user?.name?.charAt(0).toUpperCase()}
+                        </div>
+
+                    )}
 
                     <h3 className="text-3xl font-normal text-[#5a182b]">
                         {profile.user?.name}
@@ -331,6 +420,40 @@ function StylistProfile() {
                     onSubmit={updateProfile}
                     className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-8"
                 >
+
+                    {/* PHOTO */}
+
+                    <div className="mb-6">
+
+                        <label className="text-sm text-[#6e5545]">
+                            Profile photo
+                        </label>
+
+                        <div className="mt-2 flex items-center gap-5">
+
+                            {/* Preview: the new photo if one was chosen, else the saved one */}
+
+                            {(photo || profile.photo) && (
+
+                                <img
+                                    src={photo || profile.photo}
+                                    alt="Profile preview"
+                                    className="h-20 w-20 rounded-full object-cover"
+                                />
+
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={choosePhoto}
+                                className="text-sm text-[#6e5545]"
+                            />
+
+                        </div>
+
+                    </div>
+
 
                     {/* SPECIALIZATION */}
 
