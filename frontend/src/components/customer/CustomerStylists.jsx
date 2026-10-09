@@ -53,11 +53,7 @@ function CustomerStylists() {
 
             {/* ================= HEADING ================= */}
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                OUR TEAM
-            </p>
-
-            <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+            <h2 className="text-4xl font-normal text-[#5a182b]">
                 Our Stylists
             </h2>
 

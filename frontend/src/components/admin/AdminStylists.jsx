@@ -322,13 +322,9 @@ function AdminStylists() {
 
             {/* ================= HEADING ================= */}
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                YOUR TEAM
-            </p>
-
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+                <h2 className="text-4xl font-normal text-[#5a182b]">
                     Stylists
                 </h2>
 
@@ -468,6 +464,25 @@ function AdminStylists() {
                             key={stylist._id}
                             className="border border-[#d8c6b6] bg-[#f7efe5] p-8"
                         >
+
+                            {/* Round picture: the photo the stylist uploaded,
+                                or the first letter of the name */}
+
+                            {stylist.photo ? (
+
+                                <img
+                                    src={stylist.photo}
+                                    alt={stylist.user?.name}
+                                    className="mb-5 h-24 w-24 rounded-full object-cover"
+                                />
+
+                            ) : (
+
+                                <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[#d8c6b6] text-4xl text-[#5a182b]">
+                                    {stylist.user?.name?.charAt(0).toUpperCase()}
+                                </div>
+
+                            )}
 
                             <h3 className="text-2xl font-normal text-[#5a182b]">
                                 {stylist.user?.name}

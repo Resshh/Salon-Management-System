@@ -262,11 +262,7 @@ function StylistProfile() {
                 className="px-6 md:px-20 py-16 md:py-20"
             >
 
-                <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                    YOUR PROFILE
-                </p>
-
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+                <h2 className="text-4xl font-normal text-[#5a182b]">
                     Stylist Profile
                 </h2>
 
@@ -292,13 +288,9 @@ function StylistProfile() {
 
             {/* ================= HEADING ================= */}
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                YOUR PROFILE
-            </p>
-
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
 
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+                <h2 className="text-4xl font-normal text-[#5a182b]">
                     Stylist Profile
                 </h2>
 

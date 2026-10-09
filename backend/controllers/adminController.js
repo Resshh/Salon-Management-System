@@ -52,6 +52,9 @@ const getStylists = async (req, res) => {
 
         const stylists = await Stylist.find()
 
+            // The photo is hidden by default (select: false in the model)
+            .select("+photo")
+
             .populate(
                 "user",
                 "name email phone gender dateOfBirth role"

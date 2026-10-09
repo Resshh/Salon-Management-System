@@ -183,11 +183,7 @@ function AdminCustomers() {
             className="bg-[#efe2d5] px-6 md:px-20 py-16 md:py-20"
         >
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                YOUR CLIENTS
-            </p>
-
-            <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+            <h2 className="text-4xl font-normal text-[#5a182b]">
                 Customers
             </h2>
 

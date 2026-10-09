@@ -17,11 +17,7 @@ function CustomerHome() {
 
                 <div>
 
-                    <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                        WELCOME TO BEAUTÉ
-                    </p>
-
-                    <h2 className="mt-5 text-5xl md:text-7xl font-normal leading-none text-[#5a182b]">
+                    <h2 className="text-5xl md:text-7xl font-normal leading-none text-[#5a182b]">
                         Your Beauty,
                         <br />
                         <span className="text-[#9a7b62]">Your Style.</span>

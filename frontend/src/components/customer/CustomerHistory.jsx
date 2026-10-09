@@ -69,11 +69,7 @@ function CustomerHistory() {
                 id="history"
                 className="bg-[#f7efe5] px-6 md:px-20 py-16 md:py-20"
             >
-                <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                    YOUR HISTORY
-                </p>
-
-                <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+                <h2 className="text-4xl font-normal text-[#5a182b]">
                     Service History
                 </h2>
 
@@ -95,11 +91,7 @@ function CustomerHistory() {
 
             {/* HEADING */}
 
-            <p className="text-xs tracking-[4px] text-[#9a7b62]">
-                YOUR HISTORY
-            </p>
-
-            <h2 className="mt-4 text-4xl font-normal text-[#5a182b]">
+            <h2 className="text-4xl font-normal text-[#5a182b]">
                 Service History
             </h2>
 
