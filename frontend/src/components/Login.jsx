@@ -13,8 +13,6 @@ function Login() {
     // true = the password is shown as normal text
     const [showPassword, setShowPassword] = useState(false);
 
-    // Reaching the login page (Back button, typed URL, Logout) ends the
-    // session, so the Forward button cannot open a dashboard without login.
     useEffect(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
@@ -36,9 +34,6 @@ function Login() {
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("role", response.data.role);
 
-            // Open the dashboard with a full page load, so the app
-            // starts fresh as the new user
-            // (the same way Logout goes back to /login).
             window.location.href = `/${response.data.role}`;
 
         } catch (error) {
