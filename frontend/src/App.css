@@ -853,6 +853,10 @@ body {
   border-color: rgba(201, 170, 145, 0.45);
   border-radius: 14px;
   box-shadow: 0 6px 20px rgba(90, 24, 43, 0.06);
+
+  /* Frosted glass: blur whatever is behind the card */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* Fields and buttons get the same rounded look as the login page */
@@ -1013,11 +1017,10 @@ html {
     background-repeat: no-repeat;
   }
 
-  /* Navbar links: a little more room to tap */
-  .sticky-nav a,
-  .sticky-nav span,
-  .sticky-nav button {
-    padding: 4px 2px;
+  /* Navbar pills: a little smaller so more fit in one row */
+  .sticky-nav .nav-link,
+  .sticky-nav .nav-logout {
+    padding: 6px 10px;
   }
 
 }
@@ -1027,19 +1030,258 @@ html {
    NAVBAR LINKS (each one opens its own page)
 ========================= */
 
-.nav-link {
-  padding-bottom: 4px;
-  border-bottom: 2px solid transparent;
+/* Each link is a rounded "pill": icon + text */
+.nav-link,
+.nav-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 14px;
+  border-radius: 999px;
+
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
 .nav-link:hover {
   color: #5a182b;
+  background-color: rgba(90, 24, 43, 0.08);
 }
 
-/* the page we are on */
+/* the page we are on: filled maroon pill */
 .nav-link.active {
-  color: #5a182b;
-  border-bottom-color: #5a182b;
+  color: #f7efe5;
+  background-color: #5a182b;
+}
+
+/* Logout: an outlined button that fills on hover */
+.nav-logout {
+  border: 1px solid #c9aa91;
+  cursor: pointer;
+}
+
+.nav-logout:hover {
+  color: #f7efe5;
+  background-color: #5a182b;
+  border-color: #5a182b;
+}
+
+/* Keyboard users (Tab key) see a clear outline */
+.nav-link:focus-visible,
+.nav-logout:focus-visible {
+  outline: 2px solid #5a182b;
+  outline-offset: 2px;
+}
+
+
+/* =========================
+   ICONS NEXT TO CARD LABELS (Date, Time, Stylist ...)
+========================= */
+
+.card-icon {
+  display: inline;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+
+/* =========================
+   SMALL ANIMATIONS (hover and focus)
+========================= */
+
+/* Cards: the shadow grows a little when the mouse is over them */
+.soft-theme section div[class~="border"]:not([role="dialog"]):not(.dark-card) {
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+
+.soft-theme section div[class~="border"]:not([role="dialog"]):not(.dark-card):hover {
+  border-color: rgba(201, 138, 148, 0.7);
+  box-shadow: 0 10px 28px rgba(90, 24, 43, 0.12);
+}
+
+/* Buttons: brighten on hover, press down a little on click */
+.soft-theme section button,
+.soft-theme section a[class*="bg-"] {
+  transition: filter 0.2s, transform 0.1s, background-color 0.2s, color 0.2s;
+}
+
+.soft-theme section button:hover:not(:disabled),
+.soft-theme section a[class*="bg-"]:hover {
+  filter: brightness(1.12);
+}
+
+.soft-theme section button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Fields: a soft maroon ring when you click into them */
+.soft-theme section input,
+.soft-theme section select,
+.soft-theme section textarea {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.soft-theme section input:focus,
+.soft-theme section select:focus,
+.soft-theme section textarea:focus {
+  border-color: #5a182b;
+  box-shadow: 0 0 0 3px rgba(90, 24, 43, 0.12);
+}
+
+/* Feedback stars: grow a little under the mouse */
+.star-button {
+  cursor: pointer;
+  line-height: 0;
+}
+
+.soft-theme section .star-button:hover {
+  filter: none;
+  transform: scale(1.2);
+}
+
+/* A new page fades in and slides up a little.
+   "backwards" = only the start is held; when it ends nothing is left on the section. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.soft-theme section {
+  animation: page-in 0.35s ease-out backwards;
+}
+
+/* The thin line under a section heading draws itself from left to right.
+   scaleX(0) = no width; it grows to full width, starting from the left edge. */
+@keyframes line-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.soft-theme section h2::after {
+  transform-origin: left;
+  animation: line-draw 0.7s ease-out 0.25s backwards;
+}
+
+/* ----- Cards appear one after another -----
+   Each card in a list fades in a little later than the one before it.
+   :nth-child(2) = the 2nd card, and so on. Cards after the 6th use the last delay. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.soft-theme section .grid > div[class~="border"]:not([role="dialog"]),
+.soft-theme section [class*="space-y-"] > div[class~="border"]:not([role="dialog"]),
+.skeleton-card {
+  animation: card-in 0.45s ease-out backwards;
+}
+
+.soft-theme section :is(.grid, [class*="space-y-"]) > div:nth-child(2) { animation-delay: 0.08s; }
+.soft-theme section :is(.grid, [class*="space-y-"]) > div:nth-child(3) { animation-delay: 0.16s; }
+.soft-theme section :is(.grid, [class*="space-y-"]) > div:nth-child(4) { animation-delay: 0.24s; }
+.soft-theme section :is(.grid, [class*="space-y-"]) > div:nth-child(5) { animation-delay: 0.32s; }
+.soft-theme section :is(.grid, [class*="space-y-"]) > div:nth-child(n + 6) { animation-delay: 0.4s; }
+
+
+/* ----- Shine across maroon buttons -----
+   ::after is an extra invisible box inside the button. It holds a pale
+   slanted stripe that waits on the left and slides to the right on hover. */
+.soft-theme section :is(button, a)[class*="bg-[#5a182b]"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.soft-theme section :is(button, a)[class*="bg-[#5a182b]"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.soft-theme section :is(button, a)[class*="bg-[#5a182b]"]:hover:not(:disabled)::after {
+  left: 125%;
+  transition: left 0.6s ease;
+}
+
+
+/* ----- Loading placeholders (Skeleton.jsx) ----- */
+.skeleton-card {
+  padding: 32px;
+  border: 1px solid rgba(201, 170, 145, 0.45);
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, 0.55);
+}
+
+/* A grey bar with a lighter band that keeps sliding across it */
+.skeleton-line {
+  height: 14px;
+  border-radius: 8px;
+
+  background: linear-gradient(90deg, #e6d6c8 25%, #f7efe5 50%, #e6d6c8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+
+/* ----- Navbar shadow after scrolling -----
+   The animation follows the scroll position instead of a clock:
+   0px scrolled = no shadow, 80px scrolled = full shadow.
+   ponytail: needs a browser with scroll-driven animations (Chrome, Edge, new Safari);
+   older ones just show no shadow. Use a scroll listener in React if that matters. */
+@keyframes nav-shadow {
+  to {
+    box-shadow: 0 6px 20px rgba(90, 24, 43, 0.14);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+
+  .sticky-nav {
+    animation: nav-shadow linear both;
+    animation-timeline: scroll();
+    animation-range: 0 80px;
+  }
+
+}
+
+/* People who turned animations off in their device settings get none */
+@media (prefers-reduced-motion: reduce) {
+
+  .soft-theme section,
+  .soft-theme section h2::after,
+  .soft-theme section div[class~="border"],
+  .skeleton-card,
+  .skeleton-line {
+    animation: none;
+  }
+
+  .soft-theme *,
+  .nav-link,
+  .nav-logout {
+    transition: none;
+  }
+
 }
 
 

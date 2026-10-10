@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
+import SkeletonCards from "../Skeleton";
 
 // Admin overview: numbers that show how the business is doing.
 // The server works everything out (backend/controllers/dashboardController.js);
@@ -11,8 +12,6 @@ function AdminStats() {
 
     // Which period to look at: "7", "30", "90" or "all"
     const [days, setDays] = useState("30");
-
-    const token = localStorage.getItem("token");
 
     // Load again whenever the period changes
     useEffect(() => {
@@ -26,14 +25,11 @@ function AdminStats() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/dashboard/",
+            const response = await api.get(
+                "/dashboard/",
                 {
                     params: {
                         days: days
-                    },
-                    headers: {
-                        Authorization: `Bearer ${token}`
                     }
                 }
             );
@@ -42,7 +38,7 @@ function AdminStats() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load statistics"
             );
@@ -99,9 +95,7 @@ function AdminStats() {
                 id="overview"
                 className="px-6 md:px-20 py-16 md:py-20"
             >
-                <p className="text-[#6e5545]">
-                    Loading statistics...
-                </p>
+                <SkeletonCards />
             </section>
         );
 

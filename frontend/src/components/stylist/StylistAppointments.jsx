@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import ConfirmBox from "../ConfirmBox";
+import { CalendarIcon, ClockIcon, MailIcon, PhoneIcon, UserIcon, WalletIcon } from "lucide-react";
+import SkeletonCards from "../Skeleton";
 
 function StylistAppointments() {
 
@@ -21,8 +23,6 @@ function StylistAppointments() {
     const [customerHistory, setCustomerHistory] = useState(null);
     const [historyCustomerName, setHistoryCustomerName] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getAppointments();
     }, []);
@@ -33,13 +33,8 @@ function StylistAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/stylist",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/appointment/stylist"
             );
 
             setAppointments(
@@ -48,7 +43,7 @@ function StylistAppointments() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load appointments"
             );
@@ -68,14 +63,9 @@ function StylistAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${id}/approve`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/appointment/${id}/approve`,
+                {}
             );
 
             setMessage({
@@ -116,14 +106,9 @@ function StylistAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${id}/reject`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/appointment/${id}/reject`,
+                {}
             );
 
             setMessage({
@@ -164,14 +149,9 @@ function StylistAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${id}/complete`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/appointment/${id}/complete`,
+                {}
             );
 
             setMessage({
@@ -212,14 +192,9 @@ function StylistAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${id}/no-show`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/appointment/${id}/no-show`,
+                {}
             );
 
             getAppointments();
@@ -255,14 +230,9 @@ function StylistAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/payment/${id}/cash`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/payment/${id}/cash`,
+                {}
             );
 
             setMessage({
@@ -309,13 +279,8 @@ function StylistAppointments() {
 
         try {
 
-            const response = await axios.get(
-                `http://localhost:5000/api/history/customer/${customer._id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                `/history/customer/${customer._id}`
             );
 
             setHistoryCustomerName(customer.name);
@@ -498,13 +463,7 @@ function StylistAppointments() {
 
             {loading ? (
 
-                <div className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-8">
-
-                    <p className="text-[#6e5545]">
-                        Loading appointments...
-                    </p>
-
-                </div>
+                <SkeletonCards />
 
             ) : (
 
@@ -539,7 +498,7 @@ function StylistAppointments() {
                                         <p className="mt-4 text-[#6e5545]">
 
                                             <span className="text-[#9a7b62]">
-                                                Customer:
+                                                <UserIcon size={14} className="card-icon" />Customer:
                                             </span>{" "}
 
                                             {appointment.customer?.name ||
@@ -553,7 +512,7 @@ function StylistAppointments() {
                                         <p className="mt-1 text-sm text-[#6e5545]">
 
                                             <span className="text-[#9a7b62]">
-                                                Email:
+                                                <MailIcon size={14} className="card-icon" />Email:
                                             </span>{" "}
 
                                             {appointment.customer?.email ||
@@ -567,7 +526,7 @@ function StylistAppointments() {
                                         <p className="mt-1 text-sm text-[#6e5545]">
 
                                             <span className="text-[#9a7b62]">
-                                                Phone:
+                                                <PhoneIcon size={14} className="card-icon" />Phone:
                                             </span>{" "}
 
                                             {appointment.customer?.phone ||
@@ -581,7 +540,7 @@ function StylistAppointments() {
                                         <p className="mt-4 text-[#6e5545]">
 
                                             <span className="text-[#9a7b62]">
-                                                Date:
+                                                <CalendarIcon size={14} className="card-icon" />Date:
                                             </span>{" "}
 
                                             {new Date(
@@ -596,7 +555,7 @@ function StylistAppointments() {
                                         <p className="mt-1 text-[#6e5545]">
 
                                             <span className="text-[#9a7b62]">
-                                                Time:
+                                                <ClockIcon size={14} className="card-icon" />Time:
                                             </span>{" "}
 
                                             {appointment.startTime} -{" "}
@@ -623,7 +582,7 @@ function StylistAppointments() {
                                             <p className="mt-1 text-[#6e5545]">
 
                                                 <span className="text-[#9a7b62]">
-                                                    Price:
+                                                    <WalletIcon size={14} className="card-icon" />Price:
                                                 </span>{" "}
 
                                                 ₹{appointment.service.price}

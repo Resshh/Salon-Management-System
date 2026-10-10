@@ -76,6 +76,12 @@ const appointmentSchema = new mongoose.Schema(
             type: String
         },
 
+        // Loyalty points spent on this payment (1 point = 1 rupee off)
+        pointsUsed: {
+            type: Number,
+            default: 0
+        },
+
         razorpayOrderId: {
             type: String
         },

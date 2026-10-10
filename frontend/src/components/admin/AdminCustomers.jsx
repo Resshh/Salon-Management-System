@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 import ConfirmBox from "../ConfirmBox";
@@ -20,8 +20,6 @@ function AdminCustomers() {
 
     const [customers, setCustomers] = useState([]);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getCustomers();
     }, []);
@@ -33,20 +31,15 @@ function AdminCustomers() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/admin/customers",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/admin/customers"
             );
 
             setCustomers(response.data.customers || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load customers"
             );
@@ -63,14 +56,9 @@ function AdminCustomers() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/admin/users/${id}`,
-                data,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/admin/users/${id}`,
+                data
             );
 
             getCustomers();
@@ -152,13 +140,8 @@ function AdminCustomers() {
 
         try {
 
-            await axios.delete(
-                `http://localhost:5000/api/admin/users/${customer._id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.delete(
+                `/admin/users/${customer._id}`
             );
 
             getCustomers();

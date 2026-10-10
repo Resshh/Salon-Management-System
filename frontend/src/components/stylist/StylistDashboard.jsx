@@ -7,6 +7,8 @@ import StylistSchedule from "./StylistSchedule";
 import StylistHistory from "./StylistHistory";
 import StylistRatings from "./StylistRatings";
 import NotificationBell from "../NotificationBell";
+import { CalendarIcon, ClockIcon, HistoryIcon, LogOutIcon, StarIcon, UserIcon } from "lucide-react";
+import { logout } from "../../api";
 
 // The stylist area. The navbar stays the same on every page;
 // only the part below it changes with the URL:
@@ -15,11 +17,11 @@ import NotificationBell from "../NotificationBell";
 
 // The navbar links: where each one goes and what it says
 const links = [
-    { to: "/stylist", label: "Schedule" },
-    { to: "/stylist/appointments", label: "Appointments" },
-    { to: "/stylist/history", label: "History" },
-    { to: "/stylist/ratings", label: "Ratings" },
-    { to: "/stylist/profile", label: "Profile" }
+    { to: "/stylist", label: "Schedule", icon: ClockIcon },
+    { to: "/stylist/appointments", label: "Appointments", icon: CalendarIcon },
+    { to: "/stylist/history", label: "History", icon: HistoryIcon },
+    { to: "/stylist/ratings", label: "Ratings", icon: StarIcon },
+    { to: "/stylist/profile", label: "Profile", icon: UserIcon }
 ];
 
 function StylistDashboard() {
@@ -43,7 +45,7 @@ function StylistDashboard() {
                     BEAUTÉ
                 </h1>
 
-                <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-[#6e5545]">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-[#6e5545]">
 
                     {/* NavLink adds the class "active" to the link of the current page.
                         "end" means: only active on exactly this URL. */}
@@ -56,6 +58,7 @@ function StylistDashboard() {
                             end
                             className="nav-link"
                         >
+                            <link.icon size={16} />
                             {link.label}
                         </NavLink>
 
@@ -63,16 +66,14 @@ function StylistDashboard() {
 
                     <NotificationBell />
 
-                    <span
-                        onClick={() => {
-                            localStorage.removeItem("token");
-                            localStorage.removeItem("role");
-                            window.location.href = "/login";
-                        }}
-                        className="cursor-pointer hover:text-[#5a182b]"
+                    <button
+                        type="button"
+                        onClick={logout}
+                        className="nav-logout"
                     >
+                        <LogOutIcon size={16} />
                         Logout
-                    </span>
+                    </button>
 
                 </div>
 

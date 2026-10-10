@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 
@@ -14,8 +14,6 @@ function AdminComplaints() {
 
     const [complaints, setComplaints] = useState([]);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getComplaints();
     }, []);
@@ -27,20 +25,15 @@ function AdminComplaints() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/admin/complaints",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/admin/complaints"
             );
 
             setComplaints(response.data.complaints || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load complaints"
             );
@@ -57,14 +50,9 @@ function AdminComplaints() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/complaint/${id}`,
-                data,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/complaint/${id}`,
+                data
             );
 
             getComplaints();

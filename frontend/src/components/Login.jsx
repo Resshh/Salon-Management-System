@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import Message from "./Message";
 
 function Login() {
@@ -13,13 +13,20 @@ function Login() {
     // true = the password is shown as normal text
     const [showPassword, setShowPassword] = useState(false);
 
+    // Reaching the login page (Back button, typed URL, Logout) ends the
+    // session, so the Forward button cannot open a dashboard without login.
+    useEffect(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+    }, []);
+
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
         try {
-            const response = await axios.post(
-                "http://localhost:5000/api/user/login",
+            const response = await api.post(
+                "/user/login",
                 {
                     email,
                     password
@@ -29,8 +36,8 @@ function Login() {
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("role", response.data.role);
 
-            // App.jsx reads the token only when the page loads,
-            // so load the dashboard with a full page reload
+            // Open the dashboard with a full page load, so the app
+            // starts fresh as the new user
             // (the same way Logout goes back to /login).
             window.location.href = `/${response.data.role}`;
 

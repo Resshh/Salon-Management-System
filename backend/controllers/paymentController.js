@@ -79,8 +79,15 @@ const markAppointmentPaid = async (appointmentId, details) => {
 
     const points = pointsFor(appointment.amount);
 
+    // Points the customer chose to spend on this payment (see createOrder)
+    const pointsUsed = appointment.pointsUsed || 0;
+
+    // Add the earned points and take away the spent points in one step.
+    // ponytail: points are taken only when the payment succeeds, so two
+    // open orders could both count the same points. Hold the points at
+    // order time if that ever matters.
     await User.findByIdAndUpdate(appointment.customer, {
-        $inc: { loyaltyPoints: points }
+        $inc: { loyaltyPoints: points - pointsUsed }
     });
 
     const method =
@@ -89,7 +96,7 @@ const markAppointmentPaid = async (appointmentId, details) => {
     await sendNotification({
         recipient: appointment.customer,
         title: "Payment Received",
-        message: `We received your ${method} payment of ₹${appointment.amount}. You earned ${points} loyalty points.`,
+        message: `We received your ${method} payment of ₹${appointment.amount}. You used ${pointsUsed} and earned ${points} loyalty points.`,
         type: "payment",
         emailSubject: "Payment Receipt - Beauté Salon",
         emailText: `Thank you. We received your ${method} payment of ₹${appointment.amount}.\nLoyalty points earned: ${points}`
@@ -151,6 +158,7 @@ const refundIfPaid = async (appointment, reason = "cancelled") => {
     appointment.paymentStatus = "refunded";
 
     // Take back the loyalty points earned from this payment (never below 0)
+    // and give back the points the customer spent on it
     const customer = await User.findById(appointment.customer);
 
     if (customer) {
@@ -158,7 +166,7 @@ const refundIfPaid = async (appointment, reason = "cancelled") => {
         customer.loyaltyPoints = Math.max(
             customer.loyaltyPoints - pointsFor(appointment.amount),
             0
-        );
+        ) + (appointment.pointsUsed || 0);
 
         await customer.save();
 
@@ -184,7 +192,7 @@ const refundIfPaid = async (appointment, reason = "cancelled") => {
 
 // ======================================================
 // STEP 1: CREATE A RAZORPAY ORDER
-// POST /api/payment/order   body: { appointment, couponCode }
+// POST /api/payment/order   body: { appointment, couponCode, usePoints }
 // ======================================================
 
 const createOrder = async (req, res) => {
@@ -195,7 +203,7 @@ const createOrder = async (req, res) => {
             });
         }
 
-        const { appointment, couponCode } = req.body;
+        const { appointment, couponCode, usePoints } = req.body;
 
         const existingAppointment = await Appointment.findById(appointment)
             .populate("service", "name price");
@@ -263,7 +271,22 @@ const createOrder = async (req, res) => {
         }
 
         const discount = Math.round(price * discountPercent / 100);
-        const amount = Math.max(price - discount, 1);
+        let amount = Math.max(price - discount, 1);
+
+        // ---------- LOYALTY POINTS: 1 point = 1 rupee off ----------
+
+        // The balance is read from the database, never from the browser.
+        // At least 1 rupee must be left to pay, so amount - 1 is the most
+        // points that can be used.
+        let pointsUsed = 0;
+
+        if (usePoints) {
+            pointsUsed = Math.max(
+                Math.min(customer.loyaltyPoints || 0, amount - 1),
+                0
+            );
+            amount = amount - pointsUsed;
+        }
 
         // ---------- CREATE THE ORDER ON RAZORPAY ----------
 
@@ -278,6 +301,7 @@ const createOrder = async (req, res) => {
         existingAppointment.amount = amount;
         existingAppointment.discount = discount;
         existingAppointment.couponCode = usedCoupon;
+        existingAppointment.pointsUsed = pointsUsed;
 
         await existingAppointment.save();
 
@@ -287,6 +311,7 @@ const createOrder = async (req, res) => {
             amount: order.amount,
             currency: order.currency,
             discount,
+            pointsUsed,
             key: process.env.RAZORPAY_KEY_ID
         });
 
@@ -486,7 +511,8 @@ const markCashPayment = async (req, res) => {
             paymentMethod: "cash",
             amount: appointment.service.price,
             discount: 0,
-            couponCode: ""
+            couponCode: "",
+            pointsUsed: 0
         });
 
         if (!marked) {

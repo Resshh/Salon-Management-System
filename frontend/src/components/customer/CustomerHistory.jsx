@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api";
+import { CalendarIcon, ClockIcon, ScissorsIcon, TimerIcon } from "lucide-react";
+import SkeletonCards from "../Skeleton";
 
 function CustomerHistory() {
 
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
         getHistory();
@@ -20,13 +20,8 @@ function CustomerHistory() {
             setLoading(true);
             setError("");
 
-            const response = await axios.get(
-                "http://localhost:5000/api/history/customer",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/history/customer"
             );
 
             setHistory(response.data.history || []);
@@ -73,9 +68,7 @@ function CustomerHistory() {
                     Service History
                 </h2>
 
-                <p className="mt-6 text-[#6e5545]">
-                    Loading your service history...
-                </p>
+                <SkeletonCards />
             </section>
         );
 
@@ -188,7 +181,7 @@ function CustomerHistory() {
                                 <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
 
                                     <span>
-                                        Date
+                                        <CalendarIcon size={14} className="card-icon" />Date
                                     </span>
 
                                     <span className="text-[#321d1d]">
@@ -201,7 +194,7 @@ function CustomerHistory() {
                                 <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
 
                                     <span>
-                                        Stylist
+                                        <ScissorsIcon size={14} className="card-icon" />Stylist
                                     </span>
 
                                     <span className="text-[#321d1d]">
@@ -216,7 +209,7 @@ function CustomerHistory() {
                                     <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
 
                                         <span>
-                                            Duration
+                                            <TimerIcon size={14} className="card-icon" />Duration
                                         </span>
 
                                         <span className="text-[#321d1d]">
@@ -232,7 +225,7 @@ function CustomerHistory() {
                                     <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
 
                                         <span>
-                                            Time
+                                            <ClockIcon size={14} className="card-icon" />Time
                                         </span>
 
                                         <span className="text-[#321d1d]">

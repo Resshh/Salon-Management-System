@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import priyaPhoto from "../../assets/priya.png";
+import SkeletonCards from "../Skeleton";
 
 // Spare photos, found by the stylist's name.
 // Used only while a stylist has not uploaded a photo from their profile page.
@@ -13,6 +14,9 @@ function CustomerStylists() {
 
     const [stylists, setStylists] = useState([]);
 
+    // true until the first answer comes back from the server
+    const [loading, setLoading] = useState(true);
+
     useEffect(() => {
         getStylists();
     }, []);
@@ -21,25 +25,22 @@ function CustomerStylists() {
 
         try {
 
-            const token = localStorage.getItem("token");
-
-            const response = await axios.get(
-                "http://localhost:5000/api/stylist/",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/stylist/"
             );
 
             setStylists(response.data);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load stylists"
             );
+
+        } finally {
+
+            setLoading(false);
 
         }
 
@@ -62,7 +63,11 @@ function CustomerStylists() {
 
             <div className="mt-10 space-y-6">
 
-                {stylists.length > 0 ? (
+                {loading ? (
+
+                    <SkeletonCards className="" />
+
+                ) : stylists.length > 0 ? (
 
                     stylists.map((stylist) => (
 

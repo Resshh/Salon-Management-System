@@ -1,13 +1,5 @@
 const SalonSetting = require("../models/salonSettingModel");
 
-// ======================================================
-// Shared date, time and opening-hours helpers.
-// Booking, slots, clock in and the dashboard all use these,
-// so the rules exist in ONE place only.
-//
-// Dates are text like "2026-10-07" and times are text like "09:30".
-// Text in these shapes can be compared with < and > directly.
-// ======================================================
 
 const DAY_NAMES = [
     "Sunday",

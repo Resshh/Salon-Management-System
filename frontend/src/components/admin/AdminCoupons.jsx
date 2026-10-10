@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import ConfirmBox from "../ConfirmBox";
 
@@ -17,8 +17,6 @@ function AdminCoupons() {
     const [discountPercent, setDiscountPercent] = useState("");
     const [expiryDate, setExpiryDate] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getCoupons();
     }, []);
@@ -30,20 +28,15 @@ function AdminCoupons() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/coupon/",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/coupon/"
             );
 
             setCoupons(response.data.coupons || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load coupons"
             );
@@ -69,17 +62,12 @@ function AdminCoupons() {
 
         try {
 
-            await axios.post(
-                "http://localhost:5000/api/coupon/",
+            await api.post(
+                "/coupon/",
                 {
                     code: code,
                     discountPercent: Number(discountPercent),
                     expiryDate: expiryDate
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -109,15 +97,10 @@ function AdminCoupons() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/coupon/${coupon._id}`,
+            await api.put(
+                `/coupon/${coupon._id}`,
                 {
                     active: !coupon.active
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -154,13 +137,8 @@ function AdminCoupons() {
 
         try {
 
-            await axios.delete(
-                `http://localhost:5000/api/coupon/${id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.delete(
+                `/coupon/${id}`
             );
 
             getCoupons();

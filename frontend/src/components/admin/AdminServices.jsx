@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import ConfirmBox from "../ConfirmBox";
 
@@ -20,8 +20,6 @@ function AdminServices() {
     const [duration, setDuration] = useState("");
     const [price, setPrice] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getServices();
     }, []);
@@ -33,20 +31,15 @@ function AdminServices() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/admin/services",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/admin/services"
             );
 
             setServices(response.data.services || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load services"
             );
@@ -94,26 +87,16 @@ function AdminServices() {
 
             if (editingId) {
 
-                await axios.put(
-                    `http://localhost:5000/api/service/${editingId}`,
-                    serviceData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
+                await api.put(
+                    `/service/${editingId}`,
+                    serviceData
                 );
 
             } else {
 
-                await axios.post(
-                    "http://localhost:5000/api/service/",
-                    serviceData,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        }
-                    }
+                await api.post(
+                    "/service/",
+                    serviceData
                 );
 
             }
@@ -156,15 +139,10 @@ function AdminServices() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/service/${service._id}`,
+            await api.put(
+                `/service/${service._id}`,
                 {
                     availability: !service.availability
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -201,13 +179,8 @@ function AdminServices() {
 
         try {
 
-            await axios.delete(
-                `http://localhost:5000/api/service/${id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.delete(
+                `/service/${id}`
             );
 
             getServices();

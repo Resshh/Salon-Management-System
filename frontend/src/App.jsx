@@ -8,6 +8,7 @@ import "./App.css";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ErrorToast from "./components/ErrorToast";
 
 import CustomerDashboard from "./components/customer/CustomerDashboard";
 import StylistDashboard from "./components/stylist/StylistDashboard";
@@ -18,6 +19,9 @@ function App() {
 
   return (
     <BrowserRouter>
+
+      {/* Shows errors sent by showError() from any page */}
+      <ErrorToast />
 
       <Routes>
 

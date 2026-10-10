@@ -10,6 +10,8 @@ import AdminFeedbackComplaints from "./AdminFeedbackComplaints";
 import AdminSettings from "./AdminSettings";
 import AdminCoupons from "./AdminCoupons";
 import AdminNotify from "./AdminNotify";
+import { CalendarIcon, LayoutDashboardIcon, LogOutIcon, MessageSquareIcon, ScissorsIcon, SendIcon, SettingsIcon, SparklesIcon, TicketIcon, UsersIcon } from "lucide-react";
+import { logout } from "../../api";
 
 // The admin area. The navbar stays the same on every page;
 // only the part below it changes with the URL:
@@ -18,15 +20,15 @@ import AdminNotify from "./AdminNotify";
 
 // The navbar links: where each one goes and what it says
 const links = [
-    { to: "/admin", label: "Overview" },
-    { to: "/admin/stylists", label: "Stylists" },
-    { to: "/admin/services", label: "Services" },
-    { to: "/admin/customers", label: "Customers" },
-    { to: "/admin/appointments", label: "Appointments" },
-    { to: "/admin/feedback", label: "Feedback & Complaints" },
-    { to: "/admin/settings", label: "Settings" },
-    { to: "/admin/coupons", label: "Coupons" },
-    { to: "/admin/notify", label: "Notify" }
+    { to: "/admin", label: "Overview", icon: LayoutDashboardIcon },
+    { to: "/admin/stylists", label: "Stylists", icon: ScissorsIcon },
+    { to: "/admin/services", label: "Services", icon: SparklesIcon },
+    { to: "/admin/customers", label: "Customers", icon: UsersIcon },
+    { to: "/admin/appointments", label: "Appointments", icon: CalendarIcon },
+    { to: "/admin/feedback", label: "Feedback", icon: MessageSquareIcon },
+    { to: "/admin/settings", label: "Settings", icon: SettingsIcon },
+    { to: "/admin/coupons", label: "Coupons", icon: TicketIcon },
+    { to: "/admin/notify", label: "Notify", icon: SendIcon }
 ];
 
 function AdminDashboard() {
@@ -50,7 +52,7 @@ function AdminDashboard() {
                     BEAUTÉ
                 </h1>
 
-                <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-[#6e5545]">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-[#6e5545]">
 
                     {/* NavLink adds the class "active" to the link of the current page.
                         "end" means: only active on exactly this URL. */}
@@ -63,21 +65,20 @@ function AdminDashboard() {
                             end
                             className="nav-link"
                         >
+                            <link.icon size={16} />
                             {link.label}
                         </NavLink>
 
                     ))}
 
-                    <span
-                        onClick={() => {
-                            localStorage.removeItem("token");
-                            localStorage.removeItem("role");
-                            window.location.href = "/login";
-                        }}
-                        className="cursor-pointer hover:text-[#5a182b]"
+                    <button
+                        type="button"
+                        onClick={logout}
+                        className="nav-logout"
                     >
+                        <LogOutIcon size={16} />
                         Logout
-                    </span>
+                    </button>
 
                 </div>
 

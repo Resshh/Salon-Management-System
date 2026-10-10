@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 import ConfirmBox from "../ConfirmBox";
@@ -32,8 +32,6 @@ function AdminStylists() {
     const [dateOfBirth, setDateOfBirth] = useState("");
     const [specialization, setSpecialization] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getStylists();
         getAttendance();
@@ -46,20 +44,15 @@ function AdminStylists() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/attendance/today",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/attendance/today"
             );
 
             setAttendance(response.data.records || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load attendance"
             );
@@ -104,20 +97,15 @@ function AdminStylists() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/admin/stylists",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/admin/stylists"
             );
 
             setStylists(response.data.stylists || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load stylists"
             );
@@ -151,8 +139,8 @@ function AdminStylists() {
 
         try {
 
-            await axios.post(
-                "http://localhost:5000/api/user/stylist",
+            await api.post(
+                "/user/stylist",
                 {
                     name,
                     email,
@@ -161,11 +149,6 @@ function AdminStylists() {
                     gender,
                     dateOfBirth,
                     specialization
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -231,17 +214,12 @@ function AdminStylists() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/admin/users/${editingStylist.user._id}`,
+            await api.put(
+                `/admin/users/${editingStylist.user._id}`,
                 {
                     name: editName,
                     phone: editPhone,
                     specialization: editSpecialization
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -285,13 +263,8 @@ function AdminStylists() {
 
         try {
 
-            await axios.delete(
-                `http://localhost:5000/api/admin/users/${stylist.user._id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.delete(
+                `/admin/users/${stylist.user._id}`
             );
 
             getStylists();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 import ConfirmBox from "../ConfirmBox";
@@ -22,8 +22,6 @@ function AdminAppointments() {
     // "all" or one status
     const [statusFilter, setStatusFilter] = useState("all");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getAppointments();
     }, []);
@@ -35,20 +33,15 @@ function AdminAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/admin/appointments",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/admin/appointments"
             );
 
             setAppointments(response.data.appointments || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load appointments"
             );
@@ -65,14 +58,9 @@ function AdminAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/admin/appointments/${id}`,
-                data,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/admin/appointments/${id}`,
+                data
             );
 
             getAppointments();
@@ -175,14 +163,9 @@ function AdminAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/payment/${id}/cash`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/payment/${id}/cash`,
+                {}
             );
 
             setMessage({

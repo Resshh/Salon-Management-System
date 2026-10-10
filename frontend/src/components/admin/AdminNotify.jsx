@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../../api";
 import Message from "../Message";
 import ConfirmBox from "../ConfirmBox";
 
@@ -16,8 +16,6 @@ function AdminNotify() {
     const [body, setBody] = useState("");
 
     const [sending, setSending] = useState(false);
-
-    const token = localStorage.getItem("token");
 
 
     // ================= CHECK THE FORM, THEN ASK =================
@@ -51,16 +49,11 @@ function AdminNotify() {
 
             setSending(true);
 
-            const response = await axios.post(
-                "http://localhost:5000/api/admin/notify",
+            const response = await api.post(
+                "/admin/notify",
                 {
                     title: title,
                     message: body
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 

@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 
 function CustomerMembership() {
 
     const [user, setUser] = useState(null);
-
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
         getUser();
@@ -18,20 +16,15 @@ function CustomerMembership() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/user/me",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/user/me"
             );
 
             setUser(response.data.user);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load membership"
             );

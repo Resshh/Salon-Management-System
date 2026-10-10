@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError, API_URL } from "../api";
 import { io } from "socket.io-client";
+import { BellIcon } from "lucide-react";
 
 // "Notifications" item for the navbar.
 // The list opens when the mouse is over it (or when it has keyboard focus).
@@ -23,7 +24,7 @@ function NotificationBell() {
 
         // 2. Open a live connection to the server.
         //    The server checks the token, the same one the API uses.
-        const socket = io("http://localhost:5000", {
+        const socket = io(API_URL, {
             auth: {
                 token: token
             }
@@ -54,20 +55,15 @@ function NotificationBell() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/notification/",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/notification/"
             );
 
             setNotifications(response.data.notifications || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load notifications"
             );
@@ -83,14 +79,9 @@ function NotificationBell() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/notification/${id}/read`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/notification/${id}/read`,
+                {}
             );
 
             // Update only that one notification in the list
@@ -111,7 +102,7 @@ function NotificationBell() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to mark notification as read"
             );
@@ -146,10 +137,10 @@ function NotificationBell() {
             <button
                 type="button"
                 aria-label={`Notifications, ${unreadCount} unread`}
-                className="cursor-pointer hover:text-[#5a182b]"
+                className="nav-link cursor-pointer"
             >
 
-                Notifications
+                <BellIcon size={18} />
 
                 {unreadCount > 0 && (
 

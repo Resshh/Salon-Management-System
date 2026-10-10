@@ -53,7 +53,6 @@ backend/
   app.js            entry point: Express app, database connection, routes, Socket.IO
   connection.js     MongoDB connection
   createAdmin.js    creates the admin account
-  seed.js           adds test data
   routes/           URL → middleware → controller
   middleware/       authMiddleware (JWT), roleMiddleware (customer / stylist / admin)
   controllers/      logic for each endpoint
@@ -124,16 +123,6 @@ npm run dev
 
 Open the URL shown in the terminal (usually `http://localhost:5173`).
 
-### 3. Test data (optional)
-
-```bash
-cd backend
-npm run seed
-```
-
-This adds sample stylists, customers, services, appointments, feedback, complaints and coupons.
-It only adds data and is safe to run more than once. The test logins are printed when it finishes.
-
 ## How an appointment works
 
 | Step | Who | Appointment status | Payment |
@@ -161,7 +150,6 @@ overlapping appointment. If a paid appointment is cancelled, an online payment i
 |---|---|---|
 | backend | `npm run dev` | Start the API with auto reload |
 | backend | `npm start` | Start the API |
-| backend | `npm run seed` | Add test data |
 | frontend | `npm run dev` | Start the React app |
 | frontend | `npm run build` | Build for production |
 | frontend | `npm run lint` | Run ESLint |

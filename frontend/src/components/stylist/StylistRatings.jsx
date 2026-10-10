@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
+import SkeletonCards from "../Skeleton";
 
 function StylistRatings() {
 
     const [feedback, setFeedback] = useState([]);
 
-    const token = localStorage.getItem("token");
+    // true until the first answer comes back from the server
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         getFeedback();
@@ -18,23 +20,22 @@ function StylistRatings() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/feedback/stylist",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/feedback/stylist"
             );
 
             setFeedback(response.data.feedback || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load ratings"
             );
+
+        } finally {
+
+            setLoading(false);
 
         }
 
@@ -69,7 +70,11 @@ function StylistRatings() {
                 Ratings &amp; Feedback
             </h2>
 
-            {feedback.length > 0 ? (
+            {loading ? (
+
+                <SkeletonCards />
+
+            ) : feedback.length > 0 ? (
 
                 <div>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
+import SkeletonCards from "../Skeleton";
 
 function StylistProfile() {
 
@@ -19,8 +20,6 @@ function StylistProfile() {
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getProfile();
         getServices();
@@ -33,13 +32,8 @@ function StylistProfile() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/stylist/profile",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/stylist/profile"
             );
 
             // The API sends { message, stylist }
@@ -60,7 +54,7 @@ function StylistProfile() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load profile"
             );
@@ -80,8 +74,8 @@ function StylistProfile() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/service/"
+            const response = await api.get(
+                "/service/"
             );
 
             setServices(
@@ -90,7 +84,7 @@ function StylistProfile() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load services"
             );
@@ -198,14 +192,9 @@ function StylistProfile() {
                 data.photo = photo;
             }
 
-            await axios.put(
-                "http://localhost:5000/api/stylist/profile",
-                data,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                "/stylist/profile",
+                data
             );
 
             await getProfile();
@@ -243,9 +232,7 @@ function StylistProfile() {
                 id="profile"
                 className="px-6 md:px-20 py-16 md:py-20"
             >
-                <p className="text-[#6e5545]">
-                    Loading profile...
-                </p>
+                <SkeletonCards />
             </section>
         );
 

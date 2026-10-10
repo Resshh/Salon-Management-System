@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 import ConfirmBox from "../ConfirmBox";
@@ -12,6 +12,7 @@ function CustomerAppointments() {
     // Appointment being paid for (null = pay box hidden)
     const [payingAppointment, setPayingAppointment] = useState(null);
     const [couponCode, setCouponCode] = useState("");
+    const [usePoints, setUsePoints] = useState(false);
 
     // Appointment being rescheduled (null = reschedule box hidden)
     const [reschedulingAppointment, setReschedulingAppointment] = useState(null);
@@ -42,8 +43,6 @@ function CustomerAppointments() {
     // true while the booking request is on its way to the server
     const [booking, setBooking] = useState(false);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getServices();
         getStylists();
@@ -69,16 +68,13 @@ function CustomerAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/slots",
+            const response = await api.get(
+                "/appointment/slots",
                 {
                     params: {
                         stylist: selectedStylist,
                         service: selectedService,
                         date: appointmentDate
-                    },
-                    headers: {
-                        Authorization: `Bearer ${token}`
                     }
                 }
             );
@@ -89,7 +85,7 @@ function CustomerAppointments() {
 
             setSlots([]);
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load slots"
             );
@@ -105,6 +101,7 @@ function CustomerAppointments() {
 
         // Open the pay box, where the customer can type a coupon code
         setCouponCode("");
+        setUsePoints(false);
         setPayingAppointment(appointment);
 
     };
@@ -122,16 +119,12 @@ function CustomerAppointments() {
         try {
 
             // Step 1: our backend creates an order on Razorpay
-            const response = await axios.post(
-                "http://localhost:5000/api/payment/order",
+            const response = await api.post(
+                "/payment/order",
                 {
                     appointment: appointment._id,
-                    couponCode: couponCode.trim()
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    couponCode: couponCode.trim(),
+                    usePoints
                 }
             );
 
@@ -150,14 +143,9 @@ function CustomerAppointments() {
                     try {
 
                         // Step 4: our backend checks the payment is genuine
-                        await axios.post(
-                            "http://localhost:5000/api/payment/verify",
-                            paymentResult,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`
-                                }
-                            }
+                        await api.post(
+                            "/payment/verify",
+                            paymentResult
                         );
 
                         setMessage({
@@ -205,15 +193,15 @@ function CustomerAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/service/"
+            const response = await api.get(
+                "/service/"
             );
 
             setServices(response.data.services);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load services"
             );
@@ -229,20 +217,15 @@ function CustomerAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/stylist/",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/stylist/"
             );
 
             setStylists(response.data);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load stylists"
             );
@@ -258,20 +241,15 @@ function CustomerAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/appointment/my"
             );
 
             setAppointments(response.data.appointments || response.data);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load appointments"
             );
@@ -429,19 +407,14 @@ function CustomerAppointments() {
                 selectedServiceData.duration
             );
 
-            await axios.post(
-                "http://localhost:5000/api/appointment/",
+            await api.post(
+                "/appointment/",
                 {
                     stylist: selectedStylist,
                     service: selectedService,
                     date: appointmentDate,
                     startTime: startTime,
                     endTime: endTime
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -494,14 +467,9 @@ function CustomerAppointments() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${id}/cancel`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            await api.put(
+                `/appointment/${id}/cancel`,
+                {}
             );
 
             setMessage({
@@ -552,18 +520,15 @@ function CustomerAppointments() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/slots",
+            const response = await api.get(
+                "/appointment/slots",
                 {
                     params: {
                         stylist: reschedulingAppointment.stylist?._id,
                         service: reschedulingAppointment.service?._id,
                         date: date
                     },
-                    headers: {
-                        Authorization: `Bearer ${token}`
                     }
-                }
             );
 
             setRescheduleSlots(response.data.slots || []);
@@ -612,17 +577,12 @@ function CustomerAppointments() {
                 duration
             );
 
-            await axios.put(
-                `http://localhost:5000/api/appointment/${appointment._id}/reschedule`,
+            await api.put(
+                `/appointment/${appointment._id}/reschedule`,
                 {
                     date: newDate,
                     startTime: newStartTime,
                     endTime: newEndTime
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -1038,8 +998,17 @@ function CustomerAppointments() {
                             className="uppercase mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
                         />
 
+                        <label className="mt-4 flex items-center gap-2 text-sm text-[#6e5545]">
+                            <input
+                                type="checkbox"
+                                checked={usePoints}
+                                onChange={(e) => setUsePoints(e.target.checked)}
+                            />
+                            Use my loyalty points (1 point = ₹1 off)
+                        </label>
+
                         <p className="mt-3 text-sm text-[#9a7b62]">
-                            Membership and coupon discounts are applied on the next screen.
+                            Membership, coupon and points discounts are applied on the next screen.
                         </p>
 
                         <button

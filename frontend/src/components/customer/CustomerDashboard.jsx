@@ -8,6 +8,8 @@ import CustomerAppointments from "./CustomerAppointments";
 import CustomerHistory from "./CustomerHistory";
 import CustomerFeedbackComplaints from "./CustomerFeedbackComplaints";
 import NotificationBell from "../NotificationBell";
+import { CalendarIcon, HistoryIcon, HomeIcon, LogOutIcon, MessageSquareIcon, ScissorsIcon, SparklesIcon } from "lucide-react";
+import { logout } from "../../api";
 
 // The customer area. The navbar and footer stay the same on every page;
 // only the part in the middle changes with the URL:
@@ -17,12 +19,12 @@ import NotificationBell from "../NotificationBell";
 
 // The navbar links: where each one goes and what it says
 const links = [
-    { to: "/customer", label: "Home" },
-    { to: "/customer/services", label: "Services" },
-    { to: "/customer/stylists", label: "Stylists" },
-    { to: "/customer/appointments", label: "Appointments" },
-    { to: "/customer/history", label: "History" },
-    { to: "/customer/feedback", label: "Feedback & Complaints" }
+    { to: "/customer", label: "Home", icon: HomeIcon },
+    { to: "/customer/services", label: "Services", icon: SparklesIcon },
+    { to: "/customer/stylists", label: "Stylists", icon: ScissorsIcon },
+    { to: "/customer/appointments", label: "Appointments", icon: CalendarIcon },
+    { to: "/customer/history", label: "History", icon: HistoryIcon },
+    { to: "/customer/feedback", label: "Feedback & Complaints", icon: MessageSquareIcon }
 ];
 
 function CustomerDashboard() {
@@ -46,7 +48,7 @@ function CustomerDashboard() {
                     BEAUTÉ
                 </h1>
 
-                <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-[#6e5545]">
+                <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-[#6e5545]">
 
                     {/* NavLink adds the class "active" to the link of the current page.
                         "end" means: only active on exactly this URL. */}
@@ -59,6 +61,7 @@ function CustomerDashboard() {
                             end
                             className="nav-link"
                         >
+                            <link.icon size={16} />
                             {link.label}
                         </NavLink>
 
@@ -66,16 +69,14 @@ function CustomerDashboard() {
 
                     <NotificationBell />
 
-                    <span
-                        onClick={() => {
-                            localStorage.removeItem("token");
-                            localStorage.removeItem("role");
-                            window.location.href = "/login";
-                        }}
-                        className="cursor-pointer hover:text-[#5a182b]"
+                    <button
+                        type="button"
+                        onClick={logout}
+                        className="nav-logout"
                     >
+                        <LogOutIcon size={16} />
                         Logout
-                    </span>
+                    </button>
 
                 </div>
 

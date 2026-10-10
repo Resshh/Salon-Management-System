@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
+import { StarIcon } from "lucide-react";
 
 function CustomerFeedback() {
 
@@ -12,9 +13,16 @@ function CustomerFeedback() {
 
     const [selectedAppointment, setSelectedAppointment] = useState("");
     const [rating, setRating] = useState("5");
-    const [review, setReview] = useState("");
 
-    const token = localStorage.getItem("token");
+    // Star under the mouse (0 = the mouse is not over the stars)
+    const [hoverRating, setHoverRating] = useState(0);
+
+    // Stars to fill: the hovered star, otherwise the chosen rating
+    const shownRating = hoverRating || Number(rating);
+
+    // The word shown next to the stars (position 0 is not used)
+    const ratingWords = ["", "Very poor", "Poor", "Average", "Good", "Excellent"];
+    const [review, setReview] = useState("");
 
     useEffect(() => {
         getAppointments();
@@ -28,13 +36,8 @@ function CustomerFeedback() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/appointment/my"
             );
 
             // Feedback is only allowed for completed appointments
@@ -46,7 +49,7 @@ function CustomerFeedback() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load appointments"
             );
@@ -62,20 +65,15 @@ function CustomerFeedback() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/feedback/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/feedback/my"
             );
 
             setFeedback(response.data.feedback || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load feedback"
             );
@@ -101,17 +99,12 @@ function CustomerFeedback() {
 
         try {
 
-            await axios.post(
-                "http://localhost:5000/api/feedback/",
+            await api.post(
+                "/feedback/",
                 {
                     appointment: selectedAppointment,
                     rating: Number(rating),
                     review: review
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -222,19 +215,39 @@ function CustomerFeedback() {
                                 Rating
                             </label>
 
-                            <select
-                                value={rating}
-                                onChange={(e) =>
-                                    setRating(e.target.value)
-                                }
-                                className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
+                            {/* 5 stars. "shown" is the star under the mouse,
+                                or the chosen rating when the mouse is away. */}
+
+                            <div
+                                className="mt-2 flex items-center gap-1"
+                                onMouseLeave={() => setHoverRating(0)}
                             >
-                                <option value="5">5 - Excellent</option>
-                                <option value="4">4 - Good</option>
-                                <option value="3">3 - Average</option>
-                                <option value="2">2 - Poor</option>
-                                <option value="1">1 - Very poor</option>
-                            </select>
+
+                                {[1, 2, 3, 4, 5].map((star) => (
+
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        aria-label={`${star} out of 5`}
+                                        aria-pressed={Number(rating) === star}
+                                        onClick={() => setRating(String(star))}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        className="star-button"
+                                    >
+                                        <StarIcon
+                                            size={30}
+                                            color="#b88952"
+                                            fill={star <= shownRating ? "#b88952" : "none"}
+                                        />
+                                    </button>
+
+                                ))}
+
+                                <span className="ml-3 text-sm text-[#6e5545]">
+                                    {ratingWords[shownRating]}
+                                </span>
+
+                            </div>
 
                         </div>
 

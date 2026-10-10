@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import StylistAttendance from "./StylistAttendance";
+import SkeletonCards from "../Skeleton";
 
 const DAYS = [
     "Monday",
@@ -24,8 +25,6 @@ function StylistSchedule() {
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getSchedule();
     }, []);
@@ -37,13 +36,8 @@ function StylistSchedule() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/stylist/profile",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/stylist/profile"
             );
 
             const savedSchedule =
@@ -74,7 +68,7 @@ function StylistSchedule() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load schedule"
             );
@@ -222,15 +216,10 @@ function StylistSchedule() {
 
         try {
 
-            await axios.put(
-                "http://localhost:5000/api/stylist/profile",
+            await api.put(
+                "/stylist/profile",
                 {
                     workingSchedule: workingSchedule
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -275,9 +264,7 @@ function StylistSchedule() {
 
             {loading ? (
 
-                <p className="mt-8 text-[#6e5545]">
-                    Loading schedule...
-                </p>
+                <SkeletonCards />
 
             ) : schedule.length === 0 ? (
 

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
+import { CalendarIcon, PhoneIcon, UserIcon } from "lucide-react";
+import SkeletonCards from "../Skeleton";
 
 function StylistHistory() {
 
@@ -15,8 +17,6 @@ function StylistHistory() {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getHistory();
     }, []);
@@ -28,20 +28,15 @@ function StylistHistory() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/history/stylist",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/history/stylist"
             );
 
             setHistory(response.data.history || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load service history"
             );
@@ -72,15 +67,10 @@ function StylistHistory() {
 
         try {
 
-            await axios.put(
-                `http://localhost:5000/api/history/${editingItem._id}/notes`,
+            await api.put(
+                `/history/${editingItem._id}/notes`,
                 {
                     notes: notesText
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
@@ -136,9 +126,7 @@ function StylistHistory() {
 
             {loading ? (
 
-                <p className="mt-8 text-[#6e5545]">
-                    Loading service history...
-                </p>
+                <SkeletonCards />
 
             ) : history.length === 0 ? (
 
@@ -173,21 +161,21 @@ function StylistHistory() {
 
                             <p className="mt-4 text-[#6e5545]">
                                 <span className="text-[#9a7b62]">
-                                    Customer:
+                                    <UserIcon size={14} className="card-icon" />Customer:
                                 </span>{" "}
                                 {item.customer?.name || "Customer"}
                             </p>
 
                             <p className="mt-1 text-sm text-[#6e5545]">
                                 <span className="text-[#9a7b62]">
-                                    Phone:
+                                    <PhoneIcon size={14} className="card-icon" />Phone:
                                 </span>{" "}
                                 {item.customer?.phone || "Not available"}
                             </p>
 
                             <p className="mt-1 text-[#6e5545]">
                                 <span className="text-[#9a7b62]">
-                                    Date:
+                                    <CalendarIcon size={14} className="card-icon" />Date:
                                 </span>{" "}
                                 {new Date(
                                     item.serviceDate

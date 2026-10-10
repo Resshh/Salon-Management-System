@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 
 // Clock in / clock out banner, shown at the very top of the stylist's first page.
@@ -19,8 +19,6 @@ function StylistAttendance() {
     // Is the salon open right now? Sent by the server: { open, message }
     const [salon, setSalon] = useState(null);
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getRecords();
     }, []);
@@ -32,13 +30,8 @@ function StylistAttendance() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/attendance/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/attendance/my"
             );
 
             setRecords(response.data.records || []);
@@ -46,7 +39,7 @@ function StylistAttendance() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load attendance"
             );
@@ -74,14 +67,9 @@ function StylistAttendance() {
 
         try {
 
-            const response = await axios.post(
-                `http://localhost:5000/api/attendance/${action}`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.post(
+                `/attendance/${action}`,
+                {}
             );
 
             setMessage({

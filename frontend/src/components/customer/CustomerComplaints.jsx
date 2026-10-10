@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 
 function CustomerComplaints() {
@@ -12,8 +12,6 @@ function CustomerComplaints() {
     const [subject, setSubject] = useState("");
     const [description, setDescription] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getComplaints();
     }, []);
@@ -25,20 +23,15 @@ function CustomerComplaints() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/complaint/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/complaint/my"
             );
 
             setComplaints(response.data.complaints || []);
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load complaints"
             );
@@ -64,16 +57,11 @@ function CustomerComplaints() {
 
         try {
 
-            await axios.post(
-                "http://localhost:5000/api/complaint/",
+            await api.post(
+                "/complaint/",
                 {
                     subject: subject,
                     description: description
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 

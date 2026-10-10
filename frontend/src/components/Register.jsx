@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import Message from "./Message";
 
 function Register() {
@@ -25,8 +25,8 @@ function Register() {
 
         try {
 
-            const response = await axios.post(
-                "http://localhost:5000/api/user/register",
+            await api.post(
+                "/user/register",
                 {
                     name,
                     email,
@@ -36,8 +36,6 @@ function Register() {
                     dateOfBirth
                 }
             );
-
-            console.log(response.data);
 
             setMessage({
                 type: "success",

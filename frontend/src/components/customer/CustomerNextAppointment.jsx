@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import { Link } from "react-router-dom";
+import { CalendarIcon, ClockIcon } from "lucide-react";
 
 // A card in the welcome area that shows the customer's nearest upcoming appointment.
 
@@ -9,8 +10,6 @@ function CustomerNextAppointment() {
     // The nearest upcoming appointment (null = there is none)
     const [nextAppointment, setNextAppointment] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    const token = localStorage.getItem("token");
 
     useEffect(() => {
         getNextAppointment();
@@ -23,13 +22,8 @@ function CustomerNextAppointment() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/appointment/my",
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const response = await api.get(
+                "/appointment/my"
             );
 
             // Today's date as "YYYY-MM-DD", the same shape the API uses
@@ -53,7 +47,7 @@ function CustomerNextAppointment() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load next appointment"
             );
@@ -94,7 +88,7 @@ function CustomerNextAppointment() {
                     <div className="mt-6 space-y-3 text-sm text-[#6e5545]">
 
                         <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
-                            <span>Date</span>
+                            <span><CalendarIcon size={14} className="card-icon" />Date</span>
                             <span className="text-[#321d1d]">
                                 {new Date(
                                     nextAppointment.date
@@ -108,7 +102,7 @@ function CustomerNextAppointment() {
                         </div>
 
                         <div className="flex justify-between gap-4 border-b border-[#d8c6b6] pb-3">
-                            <span>Time</span>
+                            <span><ClockIcon size={14} className="card-icon" />Time</span>
                             <span className="text-[#321d1d]">
                                 {nextAppointment.startTime} - {nextAppointment.endTime}
                             </span>

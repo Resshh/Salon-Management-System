@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { showError } from "../../api";
 import Message from "../Message";
 
 const DAYS = [
@@ -26,8 +26,6 @@ function AdminSettings() {
     const [holidayDate, setHolidayDate] = useState("");
     const [holidayReason, setHolidayReason] = useState("");
 
-    const token = localStorage.getItem("token");
-
     useEffect(() => {
         getSettings();
     }, []);
@@ -39,8 +37,8 @@ function AdminSettings() {
 
         try {
 
-            const response = await axios.get(
-                "http://localhost:5000/api/settings/"
+            const response = await api.get(
+                "/settings/"
             );
 
             const settings = response.data.settings;
@@ -52,7 +50,7 @@ function AdminSettings() {
 
         } catch (error) {
 
-            console.log(
+            showError(
                 error.response?.data?.message ||
                 "Failed to load settings"
             );
@@ -123,18 +121,13 @@ function AdminSettings() {
 
         try {
 
-            await axios.put(
-                "http://localhost:5000/api/settings/",
+            await api.put(
+                "/settings/",
                 {
                     openTime,
                     closeTime,
                     closedDays,
                     holidays
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
