@@ -20,6 +20,9 @@ function AdminServices() {
     const [duration, setDuration] = useState("");
     const [price, setPrice] = useState("");
 
+    // Newly chosen picture, as text ("" = no new picture chosen)
+    const [image, setImage] = useState("");
+
     useEffect(() => {
         getServices();
     }, []);
@@ -58,6 +61,64 @@ function AdminServices() {
         setDescription("");
         setDuration("");
         setPrice("");
+        setImage("");
+
+    };
+
+
+    // ================= CHOOSE PICTURE =================
+
+    // Runs when the admin picks a file (same idea as the stylist photo).
+    // A camera picture is several MB, far too big to save in the database,
+    // so the browser first shrinks it to 480 x 360.
+    const chooseImage = (e) => {
+
+        const file = e.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        const picture = new Image();
+
+        // Runs once the browser has finished reading the picture
+        picture.onload = () => {
+
+            // A canvas is an invisible drawing board
+            const canvas = document.createElement("canvas");
+
+            canvas.width = 480;
+            canvas.height = 360;
+
+            // Cut the biggest 4:3 shape out of the middle of the picture
+            const width = Math.min(picture.width, picture.height * 4 / 3);
+            const height = width * 3 / 4;
+            const left = (picture.width - width) / 2;
+            const top = (picture.height - height) / 2;
+
+            // Draw that piece onto the canvas, scaled down to 480 x 360
+            canvas
+                .getContext("2d")
+                .drawImage(picture, left, top, width, height, 0, 0, 480, 360);
+
+            // Turn the drawing into text: "data:image/jpeg;base64,..."
+            setImage(canvas.toDataURL("image/jpeg", 0.7));
+
+            // Free the memory of the temporary address
+            URL.revokeObjectURL(picture.src);
+
+        };
+
+        // Runs when the file is not a picture
+        picture.onerror = () => {
+            setMessage({
+                type: "error",
+                text: "Please choose an image file."
+            });
+        };
+
+        // A temporary address that points at the chosen file
+        picture.src = URL.createObjectURL(file);
 
     };
 
@@ -83,6 +144,11 @@ function AdminServices() {
             price: Number(price)
         };
 
+        // Send the picture only when a new one was chosen
+        if (image) {
+            serviceData.image = image;
+        }
+
         try {
 
             if (editingId) {
@@ -102,6 +168,10 @@ function AdminServices() {
             }
 
             clearForm();
+
+            // Empties the "choose file" field. React does not control that one,
+            // so the form itself has to clear it.
+            e.target.reset();
 
             getServices();
 
@@ -281,6 +351,45 @@ function AdminServices() {
                     />
                 </div>
 
+                <div className="mt-5">
+
+                    <label className="text-sm text-[#6e5545]">
+                        Picture (optional)
+                    </label>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-5">
+
+                        {/* Preview of the newly chosen picture */}
+
+                        {image && (
+
+                            <img
+                                src={image}
+                                alt="Service preview"
+                                className="h-24 aspect-4/3 rounded-lg object-cover"
+                            />
+
+                        )}
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={chooseImage}
+                            className="text-sm text-[#6e5545]"
+                        />
+
+                    </div>
+
+                    {editingId && (
+
+                        <p className="mt-2 text-xs text-[#8b6d57]">
+                            Leave this empty to keep the current picture.
+                        </p>
+
+                    )}
+
+                </div>
+
                 <div className="mt-6 flex gap-3">
 
                     <button
@@ -290,10 +399,12 @@ function AdminServices() {
                         {editingId ? "UPDATE SERVICE" : "ADD SERVICE"}
                     </button>
 
+                    {/* type="reset" also empties the "choose file" field */}
+
                     {editingId && (
 
                         <button
-                            type="button"
+                            type="reset"
                             onClick={clearForm}
                             className="border border-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
                         >
@@ -319,6 +430,17 @@ function AdminServices() {
                             key={service._id}
                             className="border border-[#d8c6b6] bg-[#efe2d5] p-8"
                         >
+
+                            {service.image && (
+
+                                <img
+                                    src={service.image}
+                                    alt={service.name}
+                                    loading="lazy"
+                                    className="mb-5 w-full aspect-4/3 rounded-lg object-cover"
+                                />
+
+                            )}
 
                             <h3 className="text-2xl font-normal text-[#5a182b]">
                                 {service.name}

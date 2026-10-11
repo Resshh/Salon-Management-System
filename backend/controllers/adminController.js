@@ -111,6 +111,9 @@ const getServices = async (req, res) => {
 
         const services = await Service.find()
 
+            // The picture is hidden by default (select: false in the model)
+            .select("+image")
+
             .sort({
                 createdAt: -1
             });

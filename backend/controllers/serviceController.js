@@ -1,5 +1,19 @@
 const Service = require("../models/serviceModel");
 
+// Checks the picture sent by the browser.
+// The browser already shrinks it, but never trust the browser:
+// it must be a JPEG picture saved as text, and not too long.
+// Returns true when the picture is NOT acceptable.
+const isBadImage = (image) => {
+
+    return (
+        typeof image !== "string" ||
+        !image.startsWith("data:image/jpeg;base64,") ||
+        image.length > 90000
+    );
+
+};
+
 const createService = async (req, res) => {
 
     try {
@@ -8,8 +22,16 @@ const createService = async (req, res) => {
             name,
             description,
             duration,
-            price
+            price,
+            image
         } = req.body;
+
+        // The picture is optional: check it only when one was sent
+        if (image !== undefined && isBadImage(image)) {
+            return res.status(400).json({
+                message: "The picture must be a small JPEG image"
+            });
+        }
 
         const existingService = await Service.findOne({ name });
 
@@ -23,7 +45,8 @@ const createService = async (req, res) => {
             name,
             description,
             duration,
-            price
+            price,
+            image
         });
 
         await newService.save();
@@ -46,7 +69,9 @@ const getAllServices = async (req, res) => {
 
     try {
 
-        const services = await Service.find();
+        // The picture is hidden by default (select: false in the model)
+        const services = await Service.find()
+            .select("+image");
 
         return res.status(200).json({
             message: "Services fetched successfully",
@@ -75,8 +100,15 @@ const updateService = async (req, res) => {
             description,
             duration,
             price,
-            availability
+            availability,
+            image
         } = req.body;
+
+        if (image !== undefined && isBadImage(image)) {
+            return res.status(400).json({
+                message: "The picture must be a small JPEG image"
+            });
+        }
 
         const service = await Service.findById(id);
 
@@ -91,6 +123,12 @@ const updateService = async (req, res) => {
         service.duration = duration ?? service.duration;
         service.price = price ?? service.price;
         service.availability = availability ?? service.availability;
+
+        // The picture was not loaded above (select: false), so it is only
+        // touched when a new one was sent. Otherwise the old picture stays.
+        if (image !== undefined) {
+            service.image = image;
+        }
 
         await service.save();
 

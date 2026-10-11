@@ -66,13 +66,28 @@ function CustomerServices() {
                             className="flex flex-col md:flex-row md:items-center gap-8 rounded-2xl border border-[#d8c6b6] bg-[#f7efe5] p-8"
                         >
 
-                            {/* Left half: round icon + name + description */}
+                            {/* Left half: picture (or round icon) + name + description */}
 
                             <div className="flex flex-1 items-center gap-6">
 
-                                <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-[#d8c6b6] text-[#5a182b]">
-                                    <SparklesIcon size={44} strokeWidth={1.25} />
-                                </div>
+                                {/* The picture if the admin added one, otherwise the icon */}
+
+                                {service.image ? (
+
+                                    <img
+                                        src={service.image}
+                                        alt={service.name}
+                                        loading="lazy"
+                                        className="h-28 aspect-4/3 shrink-0 rounded-xl object-cover md:h-36"
+                                    />
+
+                                ) : (
+
+                                    <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-[#d8c6b6] text-[#5a182b]">
+                                        <SparklesIcon size={44} strokeWidth={1.25} />
+                                    </div>
+
+                                )}
 
                                 <div>
 
