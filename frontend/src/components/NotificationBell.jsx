@@ -3,35 +3,24 @@ import api, { showError, API_URL } from "../api";
 import { io } from "socket.io-client";
 import { BellIcon } from "lucide-react";
 
-// "Notifications" item for the navbar.
-// The list opens when the mouse is over it (or when it has keyboard focus).
-// New notifications arrive live through a WebSocket (Socket.IO),
-// so the page never has to be refreshed.
 
 function NotificationBell() {
 
     const [notifications, setNotifications] = useState([]);
 
-    // true while the mouse is over the item
     const [open, setOpen] = useState(false);
 
     const token = localStorage.getItem("token");
 
     useEffect(() => {
 
-        // 1. Load the notifications that already exist (normal API call)
         getNotifications();
-
-        // 2. Open a live connection to the server.
-        //    The server checks the token, the same one the API uses.
         const socket = io(API_URL, {
             auth: {
                 token: token
             }
         });
 
-        // 3. Whenever the server sends a "notification" event,
-        //    put the new notification at the top of the list
         socket.on("notification", (notification) => {
 
             setNotifications((oldList) => [
@@ -41,7 +30,6 @@ function NotificationBell() {
 
         });
 
-        // 4. Close the connection when this component leaves the page
         return () => {
             socket.disconnect();
         };

@@ -6,8 +6,6 @@ const db = require("./connection");
 const createAdmin = async () => {
 
     try {
-
-        // The admin login comes from .env, so no password is written in the code
         if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
             console.error("Add ADMIN_EMAIL and ADMIN_PASSWORD to backend/.env first");
             process.exit(1);

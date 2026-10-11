@@ -8,10 +8,6 @@ const sendNotification = require("../utils/notificationService");
 const isBadImage = require("../utils/checkImage");
 
 
-// ======================================================
-// GET ALL CUSTOMERS
-// ======================================================
-
 const getCustomers = async (req, res) => {
 
     try {
@@ -42,10 +38,6 @@ const getCustomers = async (req, res) => {
 
 };
 
-
-// ======================================================
-// GET ALL STYLISTS
-// ======================================================
 
 const getStylists = async (req, res) => {
 

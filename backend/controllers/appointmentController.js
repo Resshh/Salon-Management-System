@@ -192,42 +192,42 @@ const getAvailableSlots = async (req, res) => {
         // Go through each working time slot of the day
         for (const workSlot of daySlots) {
 
-        const dayStart = toMinutes(workSlot.startTime);
-        const dayEnd = toMinutes(workSlot.endTime);
+            const dayStart = toMinutes(workSlot.startTime);
+            const dayEnd = toMinutes(workSlot.endTime);
 
-        // Try an appointment every 30 minutes inside this working slot
-        for (
-            let start = dayStart;
-            start + duration <= dayEnd;
-            start += 30
-        ) {
+            // Try an appointment every 30 minutes inside this working slot
+            for (
+                let start = dayStart;
+                start + duration <= dayEnd;
+                start += 30
+            ) {
 
-            const startTime = toTime(start);
-            const endTime = toTime(start + duration);
+                const startTime = toTime(start);
+                const endTime = toTime(start + duration);
 
-            // Today: skip times that have already passed
-            if (date === getToday() && startTime <= getTimeNow()) {
-                continue;
+                // Today: skip times that have already passed
+                if (date === getToday() && startTime <= getTimeNow()) {
+                    continue;
+                }
+
+                const salonCheck = await isSalonOpen(date, startTime, endTime);
+
+                if (!salonCheck.valid) {
+                    continue;
+                }
+
+                // Two time ranges overlap when each one starts before the other ends
+                const isBooked = bookedAppointments.some(
+                    (item) =>
+                        item.startTime < endTime &&
+                        item.endTime > startTime
+                );
+
+                if (!isBooked) {
+                    slots.push({ startTime, endTime });
+                }
+
             }
-
-            const salonCheck = await isSalonOpen(date, startTime, endTime);
-
-            if (!salonCheck.valid) {
-                continue;
-            }
-
-            // Two time ranges overlap when each one starts before the other ends
-            const isBooked = bookedAppointments.some(
-                (item) =>
-                    item.startTime < endTime &&
-                    item.endTime > startTime
-            );
-
-            if (!isBooked) {
-                slots.push({ startTime, endTime });
-            }
-
-        }
 
         }
 
@@ -593,12 +593,8 @@ const approveAppointment = async (req, res) => {
 
     try {
 
-        const appointmentId =
-            req.params.id;
-
-        const userId =
-            req.user.userId;
-
+        const appointmentId = req.params.id;
+        const userId = req.user.userId;
 
         const stylist =
             await Stylist.findOne({
@@ -655,8 +651,7 @@ const approveAppointment = async (req, res) => {
 
         appointment.status =
             "approved";
-
-        // remember when the stylist answered (used for response time)
+            
         appointment.respondedAt =
             new Date();
 
@@ -888,25 +883,25 @@ const getMyAppointments = async (req, res) => {
                 customer
             })
 
-            .populate({
-                path: "stylist",
-                select: "specialization",
-                populate: {
-                    path: "user",
-                    select: "name"
-                }
-            })
+                .populate({
+                    path: "stylist",
+                    select: "specialization",
+                    populate: {
+                        path: "user",
+                        select: "name"
+                    }
+                })
 
-            .populate({
-                path: "service",
-                select:
-                    "name description duration price"
-            })
+                .populate({
+                    path: "service",
+                    select:
+                        "name description duration price"
+                })
 
-            .sort({
-                date: 1,
-                startTime: 1
-            });
+                .sort({
+                    date: 1,
+                    startTime: 1
+                });
 
 
         return res.status(200).json({
@@ -970,20 +965,20 @@ const getStylistAppointments = async (req, res) => {
                 stylist: stylist._id
             })
 
-            .populate(
-                "customer",
-                "name email phone"
-            )
+                .populate(
+                    "customer",
+                    "name email phone"
+                )
 
-            .populate(
-                "service",
-                "name description duration price"
-            )
+                .populate(
+                    "service",
+                    "name description duration price"
+                )
 
-            .sort({
-                date: 1,
-                startTime: 1
-            });
+                .sort({
+                    date: 1,
+                    startTime: 1
+                });
 
 
         return res.status(200).json({

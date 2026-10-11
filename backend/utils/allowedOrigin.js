@@ -1,6 +1,5 @@
 const allowedOrigin = (origin, callback) => {
 
-    // Tools like Postman or Razorpay's server send no "origin" at all
     if (!origin) {
         return callback(null, true);
     }
@@ -12,7 +11,6 @@ const allowedOrigin = (origin, callback) => {
         return callback(null, true);
     }
 
-    // Not allowed: the browser gets no permission header and blocks the response
     callback(null, false);
 
 };
