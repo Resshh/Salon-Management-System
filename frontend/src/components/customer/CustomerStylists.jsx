@@ -110,25 +110,12 @@ function CustomerStylists() {
                                     )}
 
 
-                                    {/* A dark fade over the bottom of the photo,
-                                        so the white name is easy to read on any picture. */}
+                                    {/* A small line of text in the top left corner of the photo.
+                                        The dark fade behind it keeps the white text easy to read. */}
 
-                                    <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-[#321d1d]/90 via-[#321d1d]/45 to-transparent px-6 pt-20 pb-5">
-
-                                        {/* Specialization */}
-
-                                        <p className="text-xs uppercase tracking-[2.5px] text-[#f7efe5]/85">
-                                            {stylist.specialization}
-                                        </p>
-
-
-                                        {/* Stylist Name */}
-
-                                        <h3 className="mt-1 text-3xl font-normal text-white">
-                                            {stylist.user?.name}
-                                        </h3>
-
-                                    </div>
+                                    <p className="absolute inset-x-0 top-0 bg-linear-to-b from-black/55 to-transparent px-5 pt-4 pb-10 text-sm text-white">
+                                        {stylist.specialization}
+                                    </p>
 
                                 </div>
 
@@ -136,6 +123,10 @@ function CustomerStylists() {
                                 {/* ---------- The details under the photo ---------- */}
 
                                 <div className="flex flex-1 flex-col px-6 py-6">
+
+                                    <h3 className="mb-3 text-3xl font-normal text-[#5a182b]">
+                                        {stylist.user?.name}
+                                    </h3>
 
                                     {/* Email */}
 

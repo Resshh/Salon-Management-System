@@ -5,6 +5,7 @@ const Appointment = require("../models/appointmentModel");
 const Feedback = require("../models/feedbackModel");
 const Complaint = require("../models/complaintModel");
 const sendNotification = require("../utils/notificationService");
+const isBadImage = require("../utils/checkImage");
 
 
 // ======================================================
@@ -344,8 +345,16 @@ const updateUser = async (req, res) => {
             phone,
             membership,
             loyaltyPoints,
-            specialization
+            specialization,
+            photo
         } = req.body;
+
+        // The photo is optional: check it only when one was sent
+        if (photo !== undefined && isBadImage(photo)) {
+            return res.status(400).json({
+                message: "The photo must be a small JPEG image"
+            });
+        }
 
         const user = await User.findById(req.params.id);
 
@@ -362,12 +371,23 @@ const updateUser = async (req, res) => {
 
         await user.save();
 
-        // Specialization is stored on the stylist profile
-        if (user.role === "stylist" && specialization) {
+        // Specialization and photo are stored on the stylist profile.
+        // "changes" holds only the ones that were sent, so the others stay as they are.
+        if (user.role === "stylist") {
+
+            const changes = {};
+
+            if (specialization) {
+                changes.specialization = specialization;
+            }
+
+            if (photo) {
+                changes.photo = photo;
+            }
 
             await Stylist.findOneAndUpdate(
                 { user: user._id },
-                { specialization }
+                changes
             );
 
         }

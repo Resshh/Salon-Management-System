@@ -3,6 +3,8 @@ import api, { showError } from "../../api";
 import Message from "../Message";
 import Modal from "../Modal";
 import ConfirmBox from "../ConfirmBox";
+import shrinkImage from "../../shrinkImage";
+import { MailIcon, PhoneIcon } from "lucide-react";
 
 function AdminStylists() {
 
@@ -14,6 +16,9 @@ function AdminStylists() {
     const [editName, setEditName] = useState("");
     const [editPhone, setEditPhone] = useState("");
     const [editSpecialization, setEditSpecialization] = useState("");
+
+    // New photo chosen in the edit box, as text ("" = keep the current photo)
+    const [editPhoto, setEditPhoto] = useState("");
 
     // Yes / no question box (null = hidden)
     const [confirmBox, setConfirmBox] = useState(null);
@@ -31,6 +36,9 @@ function AdminStylists() {
     const [gender, setGender] = useState("");
     const [dateOfBirth, setDateOfBirth] = useState("");
     const [specialization, setSpecialization] = useState("");
+
+    // Photo chosen in the "add stylist" form, as text ("" = no photo)
+    const [photo, setPhoto] = useState("");
 
     useEffect(() => {
         getStylists();
@@ -115,6 +123,29 @@ function AdminStylists() {
     };
 
 
+    // ================= CHOOSE PHOTO =================
+
+    // Runs when the admin picks a file, in the add form or in the edit box.
+    // "savePhoto" is the function that keeps the result: setPhoto or setEditPhoto.
+    // shrinkImage (in src/shrinkImage.js) makes it 400 x 500 and gives it back as text.
+    const choosePhoto = (e, savePhoto) => {
+
+        const file = e.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        shrinkImage(file, 400, 500, savePhoto, () => {
+            setMessage({
+                type: "error",
+                text: "Please choose an image file."
+            });
+        });
+
+    };
+
+
     // ================= ADD STYLIST =================
 
     const addStylist = async (e) => {
@@ -137,19 +168,26 @@ function AdminStylists() {
             return;
         }
 
+        const stylistData = {
+            name,
+            email,
+            password,
+            phone,
+            gender,
+            dateOfBirth,
+            specialization
+        };
+
+        // Send the photo only when one was chosen
+        if (photo) {
+            stylistData.photo = photo;
+        }
+
         try {
 
             await api.post(
                 "/user/stylist",
-                {
-                    name,
-                    email,
-                    password,
-                    phone,
-                    gender,
-                    dateOfBirth,
-                    specialization
-                }
+                stylistData
             );
 
             setMessage({
@@ -164,6 +202,7 @@ function AdminStylists() {
             setGender("");
             setDateOfBirth("");
             setSpecialization("");
+            setPhoto("");
 
             setShowForm(false);
 
@@ -191,6 +230,7 @@ function AdminStylists() {
         setEditName(stylist.user?.name || "");
         setEditPhone(stylist.user?.phone || "");
         setEditSpecialization(stylist.specialization || "");
+        setEditPhoto("");
         setEditingStylist(stylist);
 
     };
@@ -212,15 +252,22 @@ function AdminStylists() {
             return;
         }
 
+        const stylistData = {
+            name: editName,
+            phone: editPhone,
+            specialization: editSpecialization
+        };
+
+        // Send the photo only when a new one was chosen
+        if (editPhoto) {
+            stylistData.photo = editPhoto;
+        }
+
         try {
 
             await api.put(
                 `/admin/users/${editingStylist.user._id}`,
-                {
-                    name: editName,
-                    phone: editPhone,
-                    specialization: editSpecialization
-                }
+                stylistData
             );
 
             setEditingStylist(null);
@@ -413,6 +460,37 @@ function AdminStylists() {
 
                     </div>
 
+                    <div className="mt-5">
+
+                        <label className="text-sm text-[#6e5545]">
+                            Photo (optional)
+                        </label>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-5">
+
+                            {/* Preview of the chosen photo */}
+
+                            {photo && (
+
+                                <img
+                                    src={photo}
+                                    alt="Stylist preview"
+                                    className="h-28 aspect-4/5 rounded-lg object-cover"
+                                />
+
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => choosePhoto(e, setPhoto)}
+                                className="text-sm text-[#6e5545]"
+                            />
+
+                        </div>
+
+                    </div>
+
                     <button
                         type="submit"
                         className="mt-6 bg-[#5a182b] px-7 py-4 text-sm tracking-[2px] text-[#f7efe5] hover:bg-[#321d1d]"
@@ -427,118 +505,160 @@ function AdminStylists() {
 
             {/* ================= STYLIST LIST ================= */}
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 
                 {stylists.length > 0 ? (
 
                     stylists.map((stylist) => (
 
+                        // One card per stylist (same design as the customer Stylists page):
+                        // a big photo on top, details and buttons under it.
                         <div
                             key={stylist._id}
-                            className="border border-[#d8c6b6] bg-[#f7efe5] p-8"
+                            className="group flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#f7efe5]"
                         >
 
-                            {/* Round picture: the photo the stylist uploaded,
-                                or the first letter of the name */}
+                            {/* ---------- The photo ----------
+                                "aspect-4/5" keeps the box 4 wide by 5 tall on every screen. */}
 
-                            {stylist.photo ? (
+                            <div className="relative aspect-4/5 overflow-hidden bg-linear-to-br from-[#5a182b] to-[#9a7b62]">
 
-                                <img
-                                    src={stylist.photo}
-                                    alt={stylist.user?.name}
-                                    className="mb-5 h-24 w-24 rounded-full object-cover"
-                                />
+                                {/* The photo if there is one,
+                                    otherwise the first letter of the name on the coloured box. */}
 
-                            ) : (
+                                {stylist.photo ? (
 
-                                <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-[#d8c6b6] text-4xl text-[#5a182b]">
-                                    {stylist.user?.name?.charAt(0).toUpperCase()}
-                                </div>
+                                    <img
+                                        src={stylist.photo}
+                                        alt={stylist.user?.name}
+                                        loading="lazy"
+                                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                                    />
 
-                            )}
+                                ) : (
 
-                            <h3 className="text-2xl font-normal text-[#5a182b]">
-                                {stylist.user?.name}
-                            </h3>
+                                    <div className="flex h-full w-full items-center justify-center text-9xl text-[#f7efe5]/40">
+                                        {stylist.user?.name?.charAt(0).toUpperCase()}
+                                    </div>
 
-                            <p className="mt-3 text-[#9a7b62]">
-                                {stylist.specialization}
-                            </p>
+                                )}
 
-                            <p className="mt-4 text-sm text-[#6e5545]">
-                                {stylist.user?.email}
-                            </p>
 
-                            <p className="mt-1 text-sm text-[#6e5545]">
-                                {stylist.user?.phone}
-                            </p>
+                                {/* A small line of text in the top left corner of the photo.
+                                    The dark fade behind it keeps the white text easy to read. */}
 
-                            <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
-                                SERVICES
-                            </p>
-
-                            <p className="mt-2 text-sm text-[#6e5545]">
-                                {stylist.services?.length > 0
-                                    ? stylist.services
-                                        .map((service) => service.name)
-                                        .join(", ")
-                                    : "No services selected yet"}
-                            </p>
-
-                            <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
-                                WORKING TIME SLOTS
-                            </p>
-
-                            {stylist.workingSchedule?.length > 0 ? (
-
-                                stylist.workingSchedule.map((item, index) => (
-
-                                    <p
-                                        key={index}
-                                        className="mt-1 text-sm text-[#6e5545]"
-                                    >
-                                        {item.day}: {item.startTime} - {item.endTime}
-                                    </p>
-
-                                ))
-
-                            ) : (
-
-                                <p className="mt-2 text-sm text-[#6e5545]">
-                                    No schedule set yet
+                                <p className="absolute inset-x-0 top-0 bg-linear-to-b from-black/55 to-transparent px-5 pt-4 pb-10 text-sm text-white">
+                                    {stylist.specialization}
                                 </p>
 
-                            )}
+                            </div>
 
-                            <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
-                                TODAY
-                            </p>
 
-                            <p className="mt-2 text-sm text-[#6e5545]">
-                                {getAttendanceText(stylist._id)}
-                            </p>
+                            {/* ---------- The details under the photo ---------- */}
 
-                            {stylist.user && (
+                            <div className="flex flex-1 flex-col px-6 py-6">
 
-                                <div className="mt-5 flex gap-3">
+                                <h3 className="mb-3 text-3xl font-normal text-[#5a182b]">
+                                    {stylist.user?.name}
+                                </h3>
 
-                                    <button
-                                        onClick={() => editStylist(stylist)}
-                                        className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
-                                    >
-                                        EDIT
-                                    </button>
+                                <p className="flex items-center gap-3 text-sm break-all text-[#321d1d]">
+                                    <MailIcon size={16} className="shrink-0 text-[#9a7b62]" />
+                                    {stylist.user?.email}
+                                </p>
 
-                                    <button
-                                        onClick={() => deleteStylist(stylist)}
-                                        className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
-                                    >
-                                        DELETE
-                                    </button>
+                                <p className="mt-2 flex items-center gap-3 text-sm text-[#321d1d]">
+                                    <PhoneIcon size={16} className="shrink-0 text-[#9a7b62]" />
+                                    {stylist.user?.phone}
+                                </p>
 
-                                </div>
+                                <p className="mt-5 border-t border-[#d8c6b6] pt-5 text-xs tracking-[2px] text-[#9a7b62]">
+                                    SERVICES
+                                </p>
 
-                            )}
+                                {stylist.services?.length > 0 ? (
+
+                                    <div className="mt-3 flex flex-wrap gap-2">
+
+                                        {stylist.services.map((service) => (
+
+                                            <span
+                                                key={service._id}
+                                                className="rounded-full border border-[#d8c6b6] bg-white/70 px-3 py-1 text-xs text-[#5a182b]"
+                                            >
+                                                {service.name}
+                                            </span>
+
+                                        ))}
+
+                                    </div>
+
+                                ) : (
+
+                                    <p className="mt-2 text-sm text-[#6e5545]">
+                                        No services selected yet
+                                    </p>
+
+                                )}
+
+                                <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
+                                    WORKING TIME SLOTS
+                                </p>
+
+                                {stylist.workingSchedule?.length > 0 ? (
+
+                                    stylist.workingSchedule.map((item, index) => (
+
+                                        <p
+                                            key={index}
+                                            className="mt-1 text-sm text-[#6e5545]"
+                                        >
+                                            {item.day}: {item.startTime} - {item.endTime}
+                                        </p>
+
+                                    ))
+
+                                ) : (
+
+                                    <p className="mt-2 text-sm text-[#6e5545]">
+                                        No schedule set yet
+                                    </p>
+
+                                )}
+
+                                <p className="mt-5 text-xs tracking-[2px] text-[#9a7b62]">
+                                    TODAY
+                                </p>
+
+                                {/* "flex-1" takes the free space, so the buttons sit at the bottom of every card */}
+
+                                <p className="mt-2 flex-1 text-sm text-[#6e5545]">
+                                    {getAttendanceText(stylist._id)}
+                                </p>
+
+                                {stylist.user && (
+
+                                    <div className="mt-5 flex gap-3">
+
+                                        <button
+                                            onClick={() => editStylist(stylist)}
+                                            className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                        >
+                                            EDIT
+                                        </button>
+
+                                        <button
+                                            onClick={() => deleteStylist(stylist)}
+                                            className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                        >
+                                            DELETE
+                                        </button>
+
+                                    </div>
+
+                                )}
+
+                            </div>
 
                         </div>
 
@@ -597,6 +717,33 @@ function AdminStylists() {
                             onChange={(e) => setEditSpecialization(e.target.value)}
                             className="mt-2 w-full border border-[#c9aa91] bg-[#f7efe5] p-3 text-[#321d1d] outline-none"
                         />
+
+                        <label className="mt-4 block text-sm text-[#6e5545]">
+                            Photo (leave empty to keep the current one)
+                        </label>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-5">
+
+                            {/* Preview: the new photo if one was chosen, else the saved one */}
+
+                            {(editPhoto || editingStylist.photo) && (
+
+                                <img
+                                    src={editPhoto || editingStylist.photo}
+                                    alt="Stylist preview"
+                                    className="h-28 aspect-4/5 rounded-lg object-cover"
+                                />
+
+                            )}
+
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => choosePhoto(e, setEditPhoto)}
+                                className="text-sm text-[#6e5545]"
+                            />
+
+                        </div>
 
                         <button
                             type="submit"

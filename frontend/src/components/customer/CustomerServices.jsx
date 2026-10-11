@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api, { showError } from "../../api";
-import { ClockIcon, SparklesIcon } from "lucide-react";
+import { SparklesIcon } from "lucide-react";
 import SkeletonCards from "../Skeleton";
 
 function CustomerServices() {
@@ -49,7 +49,7 @@ function CustomerServices() {
 
             {/* Services */}
 
-            <div className="mt-10 space-y-6">
+            <div className="mt-10">
 
                 {loading ? (
 
@@ -57,80 +57,85 @@ function CustomerServices() {
 
                 ) : services.length > 0 ? (
 
-                    services.map((service) => (
+                    // A grid of cards (same design as the Stylists page):
+                    // 1 in a row on a phone, 2 on a tablet, 3 on a wide screen
+                    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 
-                        // One wide card per service (same layout as the Stylists page):
-                        // name on the left, price and duration on the right
-                        <div
-                            key={service._id}
-                            className="flex flex-col md:flex-row md:items-center gap-8 rounded-2xl border border-[#d8c6b6] bg-[#f7efe5] p-8"
-                        >
+                        {services.map((service) => (
 
-                            {/* Left half: picture (or round icon) + name + description */}
+                            // One card per service: a big picture on top, details under it.
+                            // "group" lets the picture react when the mouse is anywhere on the card.
+                            <div
+                                key={service._id}
+                                className="group flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#f7efe5]"
+                            >
 
-                            <div className="flex flex-1 items-center gap-6">
+                                {/* ---------- The picture ----------
+                                    "aspect-4/3" keeps the box 4 wide by 3 tall on every screen. */}
 
-                                {/* The picture if the admin added one, otherwise the icon */}
+                                <div className="relative aspect-4/3 overflow-hidden bg-linear-to-br from-[#5a182b] to-[#9a7b62]">
 
-                                {service.image ? (
+                                    {/* The picture if the admin added one,
+                                        otherwise a big icon on the coloured box. */}
 
-                                    <img
-                                        src={service.image}
-                                        alt={service.name}
-                                        loading="lazy"
-                                        className="h-28 aspect-4/3 shrink-0 rounded-xl object-cover md:h-36"
-                                    />
+                                    {service.image ? (
 
-                                ) : (
+                                        <img
+                                            src={service.image}
+                                            alt={service.name}
+                                            loading="lazy"
+                                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                                        />
 
-                                    <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-[#d8c6b6] text-[#5a182b]">
-                                        <SparklesIcon size={44} strokeWidth={1.25} />
-                                    </div>
+                                    ) : (
 
-                                )}
+                                        <div className="flex h-full w-full items-center justify-center text-[#f7efe5]/40">
+                                            <SparklesIcon size={96} strokeWidth={1} />
+                                        </div>
 
-                                <div>
+                                    )}
 
-                                    <h3 className="text-3xl font-normal text-[#5a182b]">
+
+                                    {/* A small line of text in the top left corner of the picture.
+                                        The dark fade behind it keeps the white text easy to read. */}
+
+                                    <p className="absolute inset-x-0 top-0 bg-linear-to-b from-black/55 to-transparent px-5 pt-4 pb-10 text-sm text-white">
+                                        {service.duration} minutes
+                                    </p>
+
+                                </div>
+
+
+                                {/* ---------- The details under the picture ---------- */}
+
+                                <div className="flex flex-1 flex-col px-6 py-6">
+
+                                    <h3 className="mb-3 text-3xl font-normal text-[#5a182b]">
                                         {service.name}
                                     </h3>
 
-                                    <p className="mt-1 text-[#9a7b62]">
+                                    {/* "flex-1" lets the description take the free space,
+                                        so the price sits at the bottom of every card. */}
+
+                                    <p className="flex-1 text-[#6e5545]">
                                         {service.description}
                                     </p>
 
-                                </div>
 
-                            </div>
+                                    {/* Price, above a thin dividing line
+                                        (the duration is already shown on the picture) */}
 
-
-                            {/* Right half: price and duration.
-                                The border is the dividing line: on top on a phone, on the left on a wide screen. */}
-
-                            <div className="flex-1 border-t border-[#9a7b62] pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-8">
-
-                                <p className="text-xs tracking-[2px] text-[#9a7b62]">
-                                    PRICE
-                                </p>
-
-                                <div className="mt-3 flex flex-wrap items-center gap-4">
-
-                                    <p className="text-3xl text-[#5a182b]">
+                                    <p className="mt-5 border-t border-[#d8c6b6] pt-5 text-3xl text-[#5a182b]">
                                         ₹{service.price}
                                     </p>
 
-                                    <span className="inline-flex items-center gap-2 rounded-full bg-[#d8c6b6] px-4 py-2 text-sm text-[#5a182b]">
-                                        <ClockIcon size={14} />
-                                        {service.duration} minutes
-                                    </span>
-
                                 </div>
 
                             </div>
 
-                        </div>
+                        ))}
 
-                    ))
+                    </div>
 
                 ) : (
 

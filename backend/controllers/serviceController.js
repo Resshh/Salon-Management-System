@@ -1,18 +1,5 @@
 const Service = require("../models/serviceModel");
-
-// Checks the picture sent by the browser.
-// The browser already shrinks it, but never trust the browser:
-// it must be a JPEG picture saved as text, and not too long.
-// Returns true when the picture is NOT acceptable.
-const isBadImage = (image) => {
-
-    return (
-        typeof image !== "string" ||
-        !image.startsWith("data:image/jpeg;base64,") ||
-        image.length > 90000
-    );
-
-};
+const isBadImage = require("../utils/checkImage");
 
 const createService = async (req, res) => {
 

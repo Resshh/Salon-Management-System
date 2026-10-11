@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import api, { showError } from "../../api";
 import Message from "../Message";
 import ConfirmBox from "../ConfirmBox";
+import shrinkImage from "../../shrinkImage";
+import { ClockIcon, SparklesIcon } from "lucide-react";
 
 function AdminServices() {
 
@@ -68,9 +70,8 @@ function AdminServices() {
 
     // ================= CHOOSE PICTURE =================
 
-    // Runs when the admin picks a file (same idea as the stylist photo).
-    // A camera picture is several MB, far too big to save in the database,
-    // so the browser first shrinks it to 480 x 360.
+    // Runs when the admin picks a file.
+    // shrinkImage (in src/shrinkImage.js) makes it 480 x 360 and gives it back as text.
     const chooseImage = (e) => {
 
         const file = e.target.files[0];
@@ -79,46 +80,12 @@ function AdminServices() {
             return;
         }
 
-        const picture = new Image();
-
-        // Runs once the browser has finished reading the picture
-        picture.onload = () => {
-
-            // A canvas is an invisible drawing board
-            const canvas = document.createElement("canvas");
-
-            canvas.width = 480;
-            canvas.height = 360;
-
-            // Cut the biggest 4:3 shape out of the middle of the picture
-            const width = Math.min(picture.width, picture.height * 4 / 3);
-            const height = width * 3 / 4;
-            const left = (picture.width - width) / 2;
-            const top = (picture.height - height) / 2;
-
-            // Draw that piece onto the canvas, scaled down to 480 x 360
-            canvas
-                .getContext("2d")
-                .drawImage(picture, left, top, width, height, 0, 0, 480, 360);
-
-            // Turn the drawing into text: "data:image/jpeg;base64,..."
-            setImage(canvas.toDataURL("image/jpeg", 0.7));
-
-            // Free the memory of the temporary address
-            URL.revokeObjectURL(picture.src);
-
-        };
-
-        // Runs when the file is not a picture
-        picture.onerror = () => {
+        shrinkImage(file, 480, 360, setImage, () => {
             setMessage({
                 type: "error",
                 text: "Please choose an image file."
             });
-        };
-
-        // A temporary address that points at the chosen file
-        picture.src = URL.createObjectURL(file);
+        });
 
     };
 
@@ -420,72 +387,102 @@ function AdminServices() {
 
             {/* ================= SERVICE LIST ================= */}
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 
                 {services.length > 0 ? (
 
                     services.map((service) => (
 
+                        // One card per service (same design as the customer Services page):
+                        // a big picture on top, details and buttons under it.
                         <div
                             key={service._id}
-                            className="border border-[#d8c6b6] bg-[#efe2d5] p-8"
+                            className="group flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#efe2d5]"
                         >
 
-                            {service.image && (
+                            {/* ---------- The picture ---------- */}
 
-                                <img
-                                    src={service.image}
-                                    alt={service.name}
-                                    loading="lazy"
-                                    className="mb-5 w-full aspect-4/3 rounded-lg object-cover"
-                                />
+                            <div className="relative aspect-4/3 overflow-hidden bg-linear-to-br from-[#5a182b] to-[#9a7b62]">
 
-                            )}
+                                {/* The picture if there is one, otherwise a big icon */}
 
-                            <h3 className="text-2xl font-normal text-[#5a182b]">
-                                {service.name}
-                            </h3>
+                                {service.image ? (
 
-                            <p className="mt-4 text-[#6e5545]">
-                                {service.description}
-                            </p>
+                                    <img
+                                        src={service.image}
+                                        alt={service.name}
+                                        loading="lazy"
+                                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                                    />
 
-                            <p className="mt-4 text-[#5a182b]">
-                                ₹{service.price}
-                            </p>
+                                ) : (
 
-                            <p className="mt-2 text-sm text-[#8b6d57]">
-                                {service.duration} minutes
-                            </p>
+                                    <div className="flex h-full w-full items-center justify-center text-[#f7efe5]/40">
+                                        <SparklesIcon size={96} strokeWidth={1} />
+                                    </div>
 
-                            <p className="mt-2 text-sm text-[#8b6d57]">
-                                {service.availability
-                                    ? "Available"
-                                    : "Not available"}
-                            </p>
+                                )}
 
-                            <div className="mt-5 flex flex-wrap gap-3">
 
-                                <button
-                                    onClick={() => editService(service)}
-                                    className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
-                                >
-                                    EDIT
-                                </button>
+                                {/* A small line of text in the top left corner of the picture.
+                                    The dark fade behind it keeps the white text easy to read. */}
 
-                                <button
-                                    onClick={() => toggleAvailability(service)}
-                                    className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
-                                >
-                                    {service.availability ? "HIDE" : "SHOW"}
-                                </button>
+                                <p className="absolute inset-x-0 top-0 bg-linear-to-b from-black/55 to-transparent px-5 pt-4 pb-10 text-sm text-white">
+                                    {service.availability ? "Available" : "Hidden"}
+                                </p>
 
-                                <button
-                                    onClick={() => deleteService(service._id)}
-                                    className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
-                                >
-                                    DELETE
-                                </button>
+                            </div>
+
+
+                            {/* ---------- The details under the picture ---------- */}
+
+                            <div className="flex flex-1 flex-col px-6 py-6">
+
+                                <h3 className="mb-3 text-3xl font-normal text-[#5a182b]">
+                                    {service.name}
+                                </h3>
+
+                                <p className="flex-1 text-[#6e5545]">
+                                    {service.description}
+                                </p>
+
+                                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#d8c6b6] pt-5">
+
+                                    <p className="text-3xl text-[#5a182b]">
+                                        ₹{service.price}
+                                    </p>
+
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-[#d8c6b6] bg-white/70 px-3 py-1 text-sm text-[#5a182b]">
+                                        <ClockIcon size={14} />
+                                        {service.duration} minutes
+                                    </span>
+
+                                </div>
+
+                                <div className="mt-5 flex flex-wrap gap-3">
+
+                                    <button
+                                        onClick={() => editService(service)}
+                                        className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                    >
+                                        EDIT
+                                    </button>
+
+                                    <button
+                                        onClick={() => toggleAvailability(service)}
+                                        className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                    >
+                                        {service.availability ? "HIDE" : "SHOW"}
+                                    </button>
+
+                                    <button
+                                        onClick={() => deleteService(service._id)}
+                                        className="border border-[#5a182b] px-4 py-2 text-sm text-[#5a182b] hover:bg-[#5a182b] hover:text-[#f7efe5]"
+                                    >
+                                        DELETE
+                                    </button>
+
+                                </div>
 
                             </div>
 

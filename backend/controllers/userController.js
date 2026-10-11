@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
 const sendEmail = require("../utils/emailService");
+const isBadImage = require("../utils/checkImage");
 // Checks the email and password sent by the browser.
 // They must be plain text: if someone sends an object such as { "$gt": "" }
 // instead of an email, MongoDB would treat it as a search operator.
@@ -138,7 +139,8 @@ const createStylistUser = async (req, res) => {
             phone,
             gender,
             dateOfBirth,
-            specialization
+            specialization,
+            photo
         } = req.body;
 
         const inputError = checkEmailAndPassword(email, password);
@@ -163,6 +165,13 @@ const createStylistUser = async (req, res) => {
             });
         }
 
+        // The photo is optional: check it only when one was sent
+        if (photo !== undefined && isBadImage(photo)) {
+            return res.status(400).json({
+                message: "The photo must be a small JPEG image"
+            });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newStylist = new User({
@@ -183,7 +192,8 @@ const createStylistUser = async (req, res) => {
             user: newStylist._id,
             specialization: specialization || "Stylist",
             services: [],
-            workingSchedule: []
+            workingSchedule: [],
+            photo
         });
 
         // No "await": the response should not wait for the email
