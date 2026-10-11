@@ -28,6 +28,11 @@ const db = require('./connection');
 db();
 
 
+// A host like Render puts its own server (a proxy) in front of ours.
+// This tells Express to read the visitor's real address from the proxy,
+// so the login limiter counts each visitor separately.
+app.set('trust proxy', 1);
+
 // Only our own frontend may call the API from a browser
 app.use(cors({
     origin: require('./utils/allowedOrigin')
