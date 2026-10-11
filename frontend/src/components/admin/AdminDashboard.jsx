@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import AdminStats from "./AdminStats";
 import AdminStylists from "./AdminStylists";
@@ -35,6 +35,17 @@ function AdminDashboard() {
 
     // The current URL. When it changes, start the new page from the top.
     const location = useLocation();
+
+    // navigate("/somewhere") opens another page without reloading the browser
+    const navigate = useNavigate();
+
+    // No page reload happens, and "replace" puts the login page in place of
+    // this page in the browser's history. If the Back button reaches an older
+    // dashboard page, ProtectedRoute sends it to /login at once, with no flash.
+    const handleLogout = () => {
+        logout();
+        navigate("/login", { replace: true });
+    };
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -73,7 +84,7 @@ function AdminDashboard() {
 
                     <button
                         type="button"
-                        onClick={logout}
+                        onClick={handleLogout}
                         className="nav-logout"
                     >
                         <LogOutIcon size={16} />

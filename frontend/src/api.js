@@ -27,11 +27,10 @@ export function showError(text) {
     window.dispatchEvent(new CustomEvent("app-error", { detail: text }));
 }
 
-// Forget the login and go back to the login page
+// Forget the login. The dashboard then opens the login page itself.
 export function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    window.location.href = "/login";
 }
 
 export default api;
