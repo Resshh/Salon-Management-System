@@ -475,7 +475,7 @@ function AdminStylists() {
                                 <img
                                     src={photo}
                                     alt="Stylist preview"
-                                    className="h-28 aspect-4/5 rounded-lg object-cover"
+                                    className="warm-photo h-28 aspect-4/5 rounded-lg object-cover"
                                 />
 
                             )}
@@ -532,7 +532,7 @@ function AdminStylists() {
                                         src={stylist.photo}
                                         alt={stylist.user?.name}
                                         loading="lazy"
-                                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                                        className="warm-photo h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
                                     />
 
                                 ) : (
@@ -731,7 +731,7 @@ function AdminStylists() {
                                 <img
                                     src={editPhoto || editingStylist.photo}
                                     alt="Stylist preview"
-                                    className="h-28 aspect-4/5 rounded-lg object-cover"
+                                    className="warm-photo h-28 aspect-4/5 rounded-lg object-cover"
                                 />
 
                             )}

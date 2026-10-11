@@ -98,7 +98,7 @@ function CustomerStylists() {
                                             src={stylist.photo || stylistPhotos[stylist.user?.name]}
                                             alt={stylist.user?.name}
                                             loading="lazy"
-                                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                                            className="warm-photo h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
                                         />
 
                                     ) : (

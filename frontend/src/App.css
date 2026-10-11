@@ -849,119 +849,30 @@ body {
    Every card in the dashboard has it, so one rule restyles them all. */
 .soft-theme section div[class~="border"]:not([role="dialog"]):not(.dark-card),
 .soft-theme section form[class~="border"] {
-  /* Dark card: almost black, with a soft deep shadow under it */
-  background-color: #1b1917;
-  border-color: rgba(255, 255, 255, 0.08);
+  /* Warm white card with a soft maroon-tinted shadow.
+     The page colours (maroon text, brown labels) are made for a light card,
+     so nothing inside has to be recoloured. */
+  background-color: #fffaf4;
+  border-color: rgba(201, 170, 145, 0.5);
   border-radius: 18px;
-  box-shadow: 0 24px 48px -14px rgba(40, 24, 18, 0.55);
-
-  /* Text with no colour class of its own becomes light */
-  color: #e6dcd1;
+  box-shadow: 0 18px 40px -16px rgba(90, 24, 43, 0.28);
 }
 
-
-/* =========================
-   INSIDE A DARK CARD
-   The pages give text and boxes the light-theme colours (maroon text, cream boxes).
-   On a dark card those would be unreadable, so each one is swapped here.
-
-   [class~="text-[#5a182b]"] means: any element that has exactly that class.
+/* Inside a card.
    Rules written inside the { } below apply only to things inside a card
-   (this is called CSS nesting).
-========================= */
-
+   (this is called CSS nesting). */
 .soft-theme section :is(div, form)[class~="border"]:not([role="dialog"]):not(.dark-card) {
 
-  /* ----- Text ----- */
-
-  /* headings, names, prices */
-  [class~="text-[#5a182b]"] {
-    color: #f6efe7;
-  }
-
-  /* normal text */
-  [class~="text-[#321d1d]"] {
-    color: #e6dcd1;
-  }
-
-  /* small grey text: labels, descriptions */
-  [class~="text-[#6e5545]"],
-  [class~="text-[#9a7b62]"],
-  [class~="text-[#8b6d57]"] {
-    color: #a59a8f;
-  }
-
-  /* status colours, made lighter so they show on black */
-  [class*="text-green-"] { color: #86d19a; }
-  [class*="text-red-"] { color: #f29b9b; }
-  [class*="text-amber-"] { color: #e8c06a; }
-  [class*="text-blue-"] { color: #9cc3f0; }
-
-
-  /* ----- Boxes and lines ----- */
-
-  /* cream boxes and chips become a faint light patch */
-  [class~="bg-[#f7efe5]"],
-  [class~="bg-[#efe2d5]"],
-  [class~="bg-[#d8c6b6]"],
-  [class*="bg-white"] {
-    background-color: rgba(255, 255, 255, 0.07);
-  }
-
-  /* brown and maroon lines become faint light lines */
-  [class*="border-[#"] {
-    border-color: rgba(255, 255, 255, 0.16);
-  }
-
-  /* a card inside a card: flatter, so the two do not fight */
-  :is(div, form)[class~="border"] {
-    background-color: rgba(255, 255, 255, 0.05);
-    box-shadow: none;
-  }
-
-
-  /* ----- Buttons: pill shaped ----- */
-
+  /* buttons are pill shaped */
   button,
   a[class*="bg-"] {
     border-radius: 999px;
   }
 
-  /* outline buttons */
-  button[class~="border"] {
-    border-color: rgba(255, 255, 255, 0.28);
-  }
-
-  /* filled buttons (and a chosen time slot): cream with dark text */
-  :is(button, a)[class~="bg-[#5a182b]"] {
-    background-color: #f3ebe2;
-    color: #1b1917;
-  }
-
-
-  /* ----- Form fields ----- */
-
-  input,
-  select,
-  textarea {
-    background-color: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #f6efe7;
-
-    /* tells the browser to draw its own parts (calendar icon, drop-down list) dark too */
-    color-scheme: dark;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #8c8177;
-  }
-
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: #e6dcd1;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
+  /* a card inside a card: flat and a little darker, so the two do not fight */
+  :is(div, form)[class~="border"] {
+    background-color: #f7efe5;
+    box-shadow: none;
   }
 }
 
@@ -1181,6 +1092,19 @@ html {
 
 
 /* =========================
+   STYLIST PHOTOS
+   Used on: the customer and admin Stylists pages, and the stylist's Profile page.
+   Gives every photo the same warm brown tone, so a black-and-white photo
+   or a cold blue one still matches the cream and maroon of the site.
+   sepia = brown tint (0 = none, 1 = full), saturate = how strong the colours are.
+========================= */
+
+.warm-photo {
+  filter: sepia(0.45) saturate(1.15);
+}
+
+
+/* =========================
    ICONS NEXT TO CARD LABELS (Date, Time, Stylist ...)
 ========================= */
 
@@ -1201,8 +1125,8 @@ html {
 }
 
 .soft-theme section div[class~="border"]:not([role="dialog"]):not(.dark-card):hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 30px 60px -14px rgba(40, 24, 18, 0.7);
+  border-color: rgba(201, 138, 148, 0.7);
+  box-shadow: 0 26px 50px -16px rgba(90, 24, 43, 0.38);
 }
 
 /* Buttons: brighten on hover, press down a little on click */
@@ -1324,9 +1248,9 @@ html {
 /* ----- Loading placeholders (Skeleton.jsx) ----- */
 .skeleton-card {
   padding: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(201, 170, 145, 0.5);
   border-radius: 18px;
-  background-color: #1b1917;
+  background-color: #fffaf4;
 }
 
 /* A grey bar with a lighter band that keeps sliding across it */
@@ -1334,7 +1258,7 @@ html {
   height: 14px;
   border-radius: 8px;
 
-  background: linear-gradient(90deg, #2b2825 25%, #3a3632 50%, #2b2825 75%);
+  background: linear-gradient(90deg, #e6d6c8 25%, #f7efe5 50%, #e6d6c8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }

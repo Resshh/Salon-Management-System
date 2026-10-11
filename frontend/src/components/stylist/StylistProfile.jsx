@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import api, { showError } from "../../api";
 import Message from "../Message";
 import SkeletonCards from "../Skeleton";
+import shrinkImage from "../../shrinkImage";
+import { MailIcon, PhoneIcon } from "lucide-react";
 
 function StylistProfile() {
 
@@ -121,8 +123,8 @@ function StylistProfile() {
     // ================= CHOOSE PHOTO =================
 
     // Runs when the stylist picks a file.
-    // A phone photo is several MB, far too big to save in the database,
-    // so the browser first shrinks it to a 300 x 300 square.
+    // shrinkImage (in src/shrinkImage.js) makes it 400 x 500, the shape of
+    // the stylist cards, and gives it back as text.
     const choosePhoto = (e) => {
 
         const file = e.target.files[0];
@@ -131,45 +133,12 @@ function StylistProfile() {
             return;
         }
 
-        const image = new Image();
-
-        // Runs once the browser has finished reading the picture
-        image.onload = () => {
-
-            // A canvas is an invisible drawing board
-            const canvas = document.createElement("canvas");
-
-            canvas.width = 300;
-            canvas.height = 300;
-
-            // Cut the biggest square out of the middle of the picture
-            const side = Math.min(image.width, image.height);
-            const left = (image.width - side) / 2;
-            const top = (image.height - side) / 2;
-
-            // Draw that square onto the canvas, scaled down to 300 x 300
-            canvas
-                .getContext("2d")
-                .drawImage(image, left, top, side, side, 0, 0, 300, 300);
-
-            // Turn the drawing into text: "data:image/jpeg;base64,..."
-            setPhoto(canvas.toDataURL("image/jpeg", 0.8));
-
-            // Free the memory of the temporary address
-            URL.revokeObjectURL(image.src);
-
-        };
-
-        // Runs when the file is not a picture
-        image.onerror = () => {
+        shrinkImage(file, 400, 500, setPhoto, () => {
             setMessage({
                 type: "error",
                 text: "Please choose an image file."
             });
-        };
-
-        // Give the file a temporary address so the browser can read it
-        image.src = URL.createObjectURL(file);
+        });
 
     };
 
@@ -299,89 +268,88 @@ function StylistProfile() {
 
             {!editing ? (
 
-                <div className="mt-8 border border-[#c9aa91] bg-[#f7efe5] p-8">
+                // Same design as the stylist cards on the customer and admin pages,
+                // turned sideways on a wide screen: big photo on the left, details on the right.
+                // "max-w-3xl" stops the card from stretching across the whole page.
+                <div className="group mt-8 flex max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#c9aa91] bg-[#f7efe5] md:flex-row">
 
-                    {/* Round picture: the photo, or the first letter of the name */}
+                    {/* ---------- The photo ----------
+                        "aspect-4/5" keeps the box 4 wide by 5 tall.
+                        On a wide screen it is 320px wide (md:w-80) and does not shrink. */}
 
-                    {profile.photo ? (
+                    <div className="relative aspect-4/5 shrink-0 overflow-hidden bg-linear-to-br from-[#5a182b] to-[#9a7b62] md:w-80">
 
-                        <img
-                            src={profile.photo}
-                            alt={profile.user?.name}
-                            className="mb-5 h-28 w-28 rounded-full object-cover"
-                        />
+                        {/* The photo, or the first letter of the name on the coloured box */}
 
-                    ) : (
+                        {profile.photo ? (
 
-                        <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-full bg-[#d8c6b6] text-5xl text-[#5a182b]">
-                            {profile.user?.name?.charAt(0).toUpperCase()}
-                        </div>
+                            <img
+                                src={profile.photo}
+                                alt={profile.user?.name}
+                                className="warm-photo h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
+                            />
 
-                    )}
+                        ) : (
 
-                    <h3 className="text-3xl font-normal text-[#5a182b]">
-                        {profile.user?.name}
-                    </h3>
+                            <div className="flex h-full w-full items-center justify-center text-9xl text-[#f7efe5]/40">
+                                {profile.user?.name?.charAt(0).toUpperCase()}
+                            </div>
 
-                    <p className="mt-3 text-[#9a7b62]">
-                        {profile.specialization}
-                    </p>
+                        )}
 
 
-                    <div className="mt-6">
+                        {/* A small line of text in the top left corner of the photo.
+                            The dark fade behind it keeps the white text easy to read. */}
 
-                        <p className="text-xs tracking-[2px] text-[#9a7b62]">
-                            EMAIL
+                        <p className="absolute inset-x-0 top-0 bg-linear-to-b from-black/55 to-transparent px-5 pt-4 pb-10 text-sm text-white">
+                            {profile.specialization}
                         </p>
 
-                        <p className="mt-1 text-[#6e5545]">
+                    </div>
+
+
+                    {/* ---------- The details beside the photo ---------- */}
+
+                    <div className="flex flex-1 flex-col justify-center px-8 py-8">
+
+                        <h3 className="mb-4 text-4xl font-normal text-[#5a182b]">
+                            {profile.user?.name}
+                        </h3>
+
+                        <p className="flex items-center gap-3 text-sm break-all text-[#321d1d]">
+                            <MailIcon size={16} className="shrink-0 text-[#9a7b62]" />
                             {profile.user?.email}
                         </p>
 
-                    </div>
-
-
-                    <div className="mt-5">
-
-                        <p className="text-xs tracking-[2px] text-[#9a7b62]">
-                            PHONE
-                        </p>
-
-                        <p className="mt-1 text-[#6e5545]">
+                        <p className="mt-2 flex items-center gap-3 text-sm text-[#321d1d]">
+                            <PhoneIcon size={16} className="shrink-0 text-[#9a7b62]" />
                             {profile.user?.phone}
                         </p>
 
-                    </div>
-
-
-                    <div className="mt-6">
-
-                        <p className="text-xs tracking-[2px] text-[#9a7b62]">
+                        <p className="mt-6 border-t border-[#d8c6b6] pt-6 text-xs tracking-[2px] text-[#9a7b62]">
                             SERVICES
                         </p>
 
                         {profile.services?.length > 0 ? (
 
-                            <div className="mt-2 space-y-1">
+                            <div className="mt-3 flex flex-wrap gap-2">
 
-                                {profile.services.map(
-                                    (service) => (
+                                {profile.services.map((service) => (
 
-                                        <p
-                                            key={service._id}
-                                            className="text-[#6e5545]"
-                                        >
-                                            {service.name}
-                                        </p>
+                                    <span
+                                        key={service._id}
+                                        className="rounded-full border border-[#d8c6b6] bg-white/70 px-3 py-1 text-xs text-[#5a182b]"
+                                    >
+                                        {service.name}
+                                    </span>
 
-                                    )
-                                )}
+                                ))}
 
                             </div>
 
                         ) : (
 
-                            <p className="mt-2 text-[#6e5545]">
+                            <p className="mt-2 text-sm text-[#6e5545]">
                                 No services selected
                             </p>
 
@@ -417,7 +385,7 @@ function StylistProfile() {
                                 <img
                                     src={photo || profile.photo}
                                     alt="Profile preview"
-                                    className="h-20 w-20 rounded-full object-cover"
+                                    className="warm-photo h-28 aspect-4/5 rounded-lg object-cover"
                                 />
 
                             )}
