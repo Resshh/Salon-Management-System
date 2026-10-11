@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api, { showError } from "../../api";
 import priyaPhoto from "../../assets/priya.png";
 import SkeletonCards from "../Skeleton";
+import { MailIcon, PhoneIcon } from "lucide-react";
 
 // Spare photos, found by the stylist's name.
 // Used only while a stylist has not uploaded a photo from their profile page.
@@ -61,7 +62,7 @@ function CustomerStylists() {
 
             {/* ================= STYLIST LIST ================= */}
 
-            <div className="mt-10 space-y-6">
+            <div className="mt-10">
 
                 {loading ? (
 
@@ -69,112 +70,120 @@ function CustomerStylists() {
 
                 ) : stylists.length > 0 ? (
 
-                    stylists.map((stylist) => (
+                    // A grid of cards: 1 in a row on a phone, 2 on a tablet, 3 on a wide screen
+                    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 
-                        // One wide card per stylist: details on the left, services on the right
-                        <div
-                            key={stylist._id}
-                            className="flex flex-col md:flex-row md:items-center gap-8 rounded-2xl border border-[#d8c6b6] bg-[#f7efe5] p-8"
-                        >
+                        {stylists.map((stylist) => (
 
-                            {/* Left half: picture + details */}
+                            // One tall card per stylist.
+                            // "overflow-hidden" cuts the coloured band to the card's round corners.
+                            <div
+                                key={stylist._id}
+                                className="flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#f7efe5]"
+                            >
 
-                            <div className="flex flex-1 items-center gap-6">
+                                {/* Coloured band across the top of the card */}
 
-                                {/* Round picture: the photo if we have one,
-                                    otherwise the first letter of the name. */}
+                                <div className="h-24 bg-linear-to-r from-[#5a182b] to-[#9a7b62]" />
 
-                                {stylist.photo || stylistPhotos[stylist.user?.name] ? (
 
-                                    <img
-                                        src={stylist.photo || stylistPhotos[stylist.user?.name]}
-                                        alt={stylist.user?.name}
-                                        className="h-28 w-28 shrink-0 rounded-full object-cover"
-                                    />
+                                {/* Everything under the band, centred.
+                                    "-mt-14" pulls the picture up so it sits half on the band. */}
 
-                                ) : (
+                                <div className="-mt-14 flex flex-1 flex-col items-center px-6 pb-7 text-center">
 
-                                    <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-[#d8c6b6] text-5xl text-[#5a182b]">
-                                        {stylist.user?.name?.charAt(0).toUpperCase()}
-                                    </div>
+                                    {/* Round picture: the photo if we have one,
+                                        otherwise the first letter of the name. */}
 
-                                )}
+                                    {stylist.photo || stylistPhotos[stylist.user?.name] ? (
 
-                                <div>
+                                        <img
+                                            src={stylist.photo || stylistPhotos[stylist.user?.name]}
+                                            alt={stylist.user?.name}
+                                            className="h-28 w-28 rounded-full object-cover shadow-md ring-4 ring-white"
+                                        />
+
+                                    ) : (
+
+                                        <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#d8c6b6] text-5xl text-[#5a182b] shadow-md ring-4 ring-white">
+                                            {stylist.user?.name?.charAt(0).toUpperCase()}
+                                        </div>
+
+                                    )}
+
 
                                     {/* Stylist Name */}
 
-                                    <h3 className="text-3xl font-normal text-[#5a182b]">
+                                    <h3 className="mt-4 text-2xl font-normal text-[#5a182b]">
                                         {stylist.user?.name}
                                     </h3>
 
 
-                                    {/* Specialization */}
+                                    {/* Specialization, as a small pill */}
 
-                                    <p className="mt-1 text-[#9a7b62]">
+                                    <p className="mt-2 rounded-full bg-[#5a182b]/10 px-4 py-1 text-xs uppercase tracking-[1.5px] text-[#5a182b]">
                                         {stylist.specialization}
                                     </p>
 
 
                                     {/* Email */}
 
-                                    <p className="mt-4 text-sm text-[#321d1d]">
-                                        <span className="mr-3 text-[#5a182b]">✉</span>
+                                    <p className="mt-5 flex items-center gap-2 text-sm break-all text-[#321d1d]">
+                                        <MailIcon size={15} className="shrink-0 text-[#9a7b62]" />
                                         {stylist.user?.email}
                                     </p>
 
 
                                     {/* Phone */}
 
-                                    <p className="mt-2 text-sm text-[#321d1d]">
-                                        <span className="mr-3 text-[#5a182b]">☎</span>
+                                    <p className="mt-2 flex items-center gap-2 text-sm text-[#321d1d]">
+                                        <PhoneIcon size={15} className="shrink-0 text-[#9a7b62]" />
                                         {stylist.user?.phone}
                                     </p>
+
+
+                                    {/* Services, under a thin dividing line */}
+
+                                    <div className="mt-6 w-full border-t border-[#d8c6b6] pt-5">
+
+                                        <p className="text-xs tracking-[2px] text-[#9a7b62]">
+                                            SERVICES
+                                        </p>
+
+                                        {stylist.services?.length > 0 ? (
+
+                                            <div className="mt-3 flex flex-wrap justify-center gap-2">
+
+                                                {stylist.services.map((service) => (
+
+                                                    <span
+                                                        key={service._id}
+                                                        className="rounded-full border border-[#d8c6b6] bg-white/70 px-3 py-1 text-xs text-[#5a182b]"
+                                                    >
+                                                        {service.name}
+                                                    </span>
+
+                                                ))}
+
+                                            </div>
+
+                                        ) : (
+
+                                            <p className="mt-3 text-sm text-[#6e5545]">
+                                                No services listed
+                                            </p>
+
+                                        )}
+
+                                    </div>
 
                                 </div>
 
                             </div>
 
+                        ))}
 
-                            {/* Right half: services.
-                                The border is the dividing line: on top on a phone, on the left on a wide screen. */}
-
-                            <div className="flex-1 border-t border-[#9a7b62] pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-8">
-
-                                <p className="text-xs tracking-[2px] text-[#9a7b62]">
-                                    SERVICES
-                                </p>
-
-                                {stylist.services?.length > 0 ? (
-
-                                    <div className="mt-3 flex flex-wrap gap-3">
-
-                                        {stylist.services.map((service) => (
-
-                                            <span
-                                                key={service._id}
-                                                className="rounded-full bg-[#d8c6b6] px-4 py-2 text-sm text-[#5a182b]"
-                                            >
-                                                {service.name}
-                                            </span>
-
-                                        ))}
-
-                                    </div>
-
-                                ) : (
-
-                                    <p className="mt-3 text-sm text-[#6e5545]">
-                                        No services listed
-                                    </p>
-
-                                )}
-
-                            </div>
-
-                        </div>
-
-                    ))
+                    </div>
 
                 ) : (
 
