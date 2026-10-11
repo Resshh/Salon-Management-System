@@ -75,76 +75,87 @@ function CustomerStylists() {
 
                         {stylists.map((stylist) => (
 
-                            // One tall card per stylist.
-                            // "overflow-hidden" cuts the coloured band to the card's round corners.
+                            // One card per stylist: a big photo on top, details under it.
+                            // "group" lets the photo react when the mouse is anywhere on the card.
+                            // "overflow-hidden" cuts the photo to the card's round corners.
                             <div
                                 key={stylist._id}
-                                className="flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#f7efe5]"
+                                className="group flex flex-col overflow-hidden rounded-2xl border border-[#d8c6b6] bg-[#f7efe5]"
                             >
 
-                                {/* Coloured band across the top of the card */}
+                                {/* ---------- The photo ----------
+                                    "aspect-4/5" keeps the box 4 wide by 5 tall on every screen,
+                                    so the page does not jump when the photo arrives. */}
 
-                                <div className="h-24 bg-linear-to-r from-[#5a182b] to-[#9a7b62]" />
+                                <div className="relative aspect-4/5 overflow-hidden bg-linear-to-br from-[#5a182b] to-[#9a7b62]">
 
-
-                                {/* Everything under the band, centred.
-                                    "-mt-14" pulls the picture up so it sits half on the band. */}
-
-                                <div className="-mt-14 flex flex-1 flex-col items-center px-6 pb-7 text-center">
-
-                                    {/* Round picture: the photo if we have one,
-                                        otherwise the first letter of the name. */}
+                                    {/* The photo if we have one,
+                                        otherwise the first letter of the name on the coloured box. */}
 
                                     {stylist.photo || stylistPhotos[stylist.user?.name] ? (
 
                                         <img
                                             src={stylist.photo || stylistPhotos[stylist.user?.name]}
                                             alt={stylist.user?.name}
-                                            className="h-28 w-28 rounded-full object-cover shadow-md ring-4 ring-white"
+                                            loading="lazy"
+                                            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 motion-reduce:transition-none"
                                         />
 
                                     ) : (
 
-                                        <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#d8c6b6] text-5xl text-[#5a182b] shadow-md ring-4 ring-white">
+                                        <div className="flex h-full w-full items-center justify-center text-9xl text-[#f7efe5]/40">
                                             {stylist.user?.name?.charAt(0).toUpperCase()}
                                         </div>
 
                                     )}
 
 
-                                    {/* Stylist Name */}
+                                    {/* A dark fade over the bottom of the photo,
+                                        so the white name is easy to read on any picture. */}
 
-                                    <h3 className="mt-4 text-2xl font-normal text-[#5a182b]">
-                                        {stylist.user?.name}
-                                    </h3>
+                                    <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-[#321d1d]/90 via-[#321d1d]/45 to-transparent px-6 pt-20 pb-5">
+
+                                        {/* Specialization */}
+
+                                        <p className="text-xs uppercase tracking-[2.5px] text-[#f7efe5]/85">
+                                            {stylist.specialization}
+                                        </p>
 
 
-                                    {/* Specialization, as a small pill */}
+                                        {/* Stylist Name */}
 
-                                    <p className="mt-2 rounded-full bg-[#5a182b]/10 px-4 py-1 text-xs uppercase tracking-[1.5px] text-[#5a182b]">
-                                        {stylist.specialization}
-                                    </p>
+                                        <h3 className="mt-1 text-3xl font-normal text-white">
+                                            {stylist.user?.name}
+                                        </h3>
 
+                                    </div>
+
+                                </div>
+
+
+                                {/* ---------- The details under the photo ---------- */}
+
+                                <div className="flex flex-1 flex-col px-6 py-6">
 
                                     {/* Email */}
 
-                                    <p className="mt-5 flex items-center gap-2 text-sm break-all text-[#321d1d]">
-                                        <MailIcon size={15} className="shrink-0 text-[#9a7b62]" />
+                                    <p className="flex items-center gap-3 text-sm break-all text-[#321d1d]">
+                                        <MailIcon size={16} className="shrink-0 text-[#9a7b62]" />
                                         {stylist.user?.email}
                                     </p>
 
 
                                     {/* Phone */}
 
-                                    <p className="mt-2 flex items-center gap-2 text-sm text-[#321d1d]">
-                                        <PhoneIcon size={15} className="shrink-0 text-[#9a7b62]" />
+                                    <p className="mt-2 flex items-center gap-3 text-sm text-[#321d1d]">
+                                        <PhoneIcon size={16} className="shrink-0 text-[#9a7b62]" />
                                         {stylist.user?.phone}
                                     </p>
 
 
                                     {/* Services, under a thin dividing line */}
 
-                                    <div className="mt-6 w-full border-t border-[#d8c6b6] pt-5">
+                                    <div className="mt-5 border-t border-[#d8c6b6] pt-5">
 
                                         <p className="text-xs tracking-[2px] text-[#9a7b62]">
                                             SERVICES
@@ -152,7 +163,7 @@ function CustomerStylists() {
 
                                         {stylist.services?.length > 0 ? (
 
-                                            <div className="mt-3 flex flex-wrap justify-center gap-2">
+                                            <div className="mt-3 flex flex-wrap gap-2">
 
                                                 {stylist.services.map((service) => (
 
