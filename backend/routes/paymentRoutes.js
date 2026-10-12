@@ -25,8 +25,6 @@ router.post(
     verifyPayment
 );
 
-// Called by Razorpay's server, so there is no login token.
-// The controller checks Razorpay's signature instead.
 router.post("/webhook", razorpayWebhook);
 
 router.put(

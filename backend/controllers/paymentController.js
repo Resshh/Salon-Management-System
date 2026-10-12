@@ -8,7 +8,6 @@ const Coupon = require("../models/couponModel");
 
 const sendNotification = require("../utils/notificationService");
 
-// ======================================================
 // PAYMENT FLOW
 //
 // 1. Customer books            -> status "pending",  payment "unpaid"

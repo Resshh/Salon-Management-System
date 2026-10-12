@@ -12,7 +12,6 @@ const DAY_NAMES = [
 ];
 
 
-// ---------- shape checks ----------
 
 const isValidDate = (value) => {
     return (
@@ -30,22 +29,18 @@ const isValidTime = (value) => {
 };
 
 
-// ---------- conversions ----------
 
-// "09:30" -> 570 minutes
 const toMinutes = (time) => {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
 };
 
-// 570 minutes -> "09:30"
 const toTime = (totalMinutes) => {
     const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
     const minutes = String(totalMinutes % 60).padStart(2, "0");
     return `${hours}:${minutes}`;
 };
 
-// A Date -> "2026-10-07"
 const toDateText = (date) => {
     return (
         date.getFullYear() + "-" +
@@ -54,13 +49,11 @@ const toDateText = (date) => {
     );
 };
 
-// "2026-10-07" -> "Wednesday"
 const getDayName = (date) => {
     return DAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
 };
 
 
-// ---------- now ----------
 
 const getToday = () => {
     return toDateText(new Date());
@@ -75,15 +68,10 @@ const getTimeNow = () => {
 };
 
 
-// ---------- is the salon open? ----------
-
-// Checks the hours, weekly days off and holidays the admin saved.
-// Returns { valid: true } or { valid: false, message }.
 const isSalonOpen = async (date, startTime, endTime) => {
 
     const settings = await SalonSetting.findOne();
 
-    // Admin has not saved any settings yet, so nothing to check
     if (!settings) {
         return { valid: true };
     }

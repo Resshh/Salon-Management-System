@@ -10,14 +10,15 @@ Customers book appointments with stylists, stylists manage their schedule and bo
 - Browse services (price, duration) and stylist profiles
 - Book an appointment: choose a stylist, one of their services, a date and a free time slot
 - Cancel or reschedule an appointment
-- Pay online with Razorpay (coupons and membership discounts), or pay at the salon
+- Pay online with Razorpay (coupons, membership discounts and loyalty points), or pay at the salon
 - Automatic refund when a paid appointment is cancelled
 - Service history, ratings and feedback, complaints
-- Membership tier and loyalty points
+- Membership tier and loyalty points (1 point = ₹1 off the next payment)
 - Live notifications in the navbar, plus email notifications
 
 ### Stylist
 - Manage profile, offered services, working days and hours
+- Clock in and clock out (attendance)
 - Accept or reject appointment requests
 - Mark appointments as completed or no-show, record cash payments
 - Filter appointments: today, next 7 days, upcoming
@@ -27,6 +28,7 @@ Customers book appointments with stylists, stylists manage their schedule and bo
 ### Admin
 - Dashboard statistics
 - Add, edit and delete stylists and customers
+- See which stylists have clocked in today
 - Add, edit, delete, hide and show services
 - View, approve, reschedule and cancel any appointment
 - Salon working hours, weekly days off and holidays
@@ -72,7 +74,7 @@ frontend/src/
 ## Getting started
 
 ### Requirements
-- Node.js 18 or newer
+- Node.js 20.19 or newer (required by Vite 8)
 - A MongoDB database (local or MongoDB Atlas)
 - A Gmail account with an app password (for emails)
 - A Razorpay account in test mode (for payments)
@@ -129,7 +131,7 @@ Open the URL shown in the terminal (usually `http://localhost:5173`).
 |---|---|---|---|
 | 1. Book a free slot | Customer | pending | unpaid |
 | 2. Accept or reject | Stylist | approved / rejected | unpaid |
-| 3. Pay online, or pay cash at the salon | Customer / Stylist | approved | paid |
+| 3. Pay online, or pay cash at the salon | Customer / Stylist or Admin | approved | paid |
 | 4. Finish the service | Stylist | completed / no-show | paid |
 
 A booking is accepted only if the salon is open, the stylist is working at that time, and the stylist has no
@@ -138,7 +140,7 @@ overlapping appointment. If a paid appointment is cancelled, an online payment i
 ## How payment works
 
 1. The backend creates a Razorpay order. The amount is always calculated on the server from the service price,
-   the customer's membership discount and any coupon.
+   the customer's membership discount, any coupon and any loyalty points used.
 2. The browser opens Razorpay Checkout.
 3. Razorpay returns a payment id and a signature. The backend verifies the signature with HMAC-SHA256 before
    marking the appointment as paid.

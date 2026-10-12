@@ -95,7 +95,7 @@ function CustomerAppointments() {
     };
 
 
-    // ================= PAY WITH RAZORPAY =================
+    // PAY WITH RAZORPAY 
 
     const payAppointment = (appointment) => {
 
@@ -113,7 +113,6 @@ function CustomerAppointments() {
 
         const appointment = payingAppointment;
 
-        // Close the pay box before the Razorpay window opens
         setPayingAppointment(null);
 
         try {

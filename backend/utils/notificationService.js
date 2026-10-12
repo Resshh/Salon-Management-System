@@ -5,9 +5,6 @@ const sendEmail = require("./emailService");
 const { sendToUser } = require("./socket");
 
 
-// ======================================================
-// SEND IN-APP NOTIFICATION + EMAIL
-// ======================================================
 
 const sendNotification = async ({
     recipient,
@@ -18,9 +15,6 @@ const sendNotification = async ({
     emailText
 }) => {
 
-    // -------------------------------
-    // IN-APP NOTIFICATION
-    // -------------------------------
 
     try {
 
@@ -31,7 +25,6 @@ const sendNotification = async ({
             type
         });
 
-        // Push it to the user's browser straight away (if they are online)
         sendToUser(recipient, notification);
 
     } catch (error) {
@@ -44,9 +37,6 @@ const sendNotification = async ({
     }
 
 
-    // -------------------------------
-    // EMAIL NOTIFICATION
-    // -------------------------------
 
     try {
 
