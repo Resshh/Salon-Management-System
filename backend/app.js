@@ -28,17 +28,12 @@ const db = require('./connection');
 db();
 
 
-// A host like Render puts its own server (a proxy) in front of ours.
-// This tells Express to read the visitor's real address from the proxy,
-// so the login limiter counts each visitor separately.
 app.set('trust proxy', 1);
 
-// Only our own frontend may call the API from a browser
 app.use(cors({
     origin: require('./utils/allowedOrigin')
 }));
-// "verify" keeps a copy of the raw request body.
-// The Razorpay webhook needs it to check the signature.
+
 
 app.use(express.json({
     verify: (req, res, buffer) => {
@@ -62,8 +57,6 @@ app.use("/api/coupon", couponRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/attendance", attendanceRoutes);
 
-// Socket.IO needs the plain HTTP server, so we create it ourselves
-// and let both Express (the API) and Socket.IO (live notifications) use it
 const server = http.createServer(app);
 
 initSocket(server);

@@ -60,9 +60,6 @@ const sendNotification = async ({
             emailText
         ) {
 
-            // No "await" here on purpose: sending an email takes a few seconds,
-            // and the user should not have to wait for it.
-            // sendEmail catches its own errors.
             sendEmail(
                 user.email,
                 emailSubject,

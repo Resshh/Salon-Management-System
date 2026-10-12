@@ -4,10 +4,7 @@ const User = require("../models/userModel");
 const Stylist = require("../models/stylistModel");
 const sendEmail = require("../utils/emailService");
 const isBadImage = require("../utils/checkImage");
-// Checks the email and password sent by the browser.
-// They must be plain text: if someone sends an object such as { "$gt": "" }
-// instead of an email, MongoDB would treat it as a search operator.
-// Returns an error message, or null when everything is fine.
+
 const checkEmailAndPassword = (email, password) => {
 
     if (typeof email !== "string" || typeof password !== "string") {
@@ -64,7 +61,6 @@ const registerUser = async (req, res) => {
 
         await newUser.save();
 
-        // No "await": the response should not wait for the email
         sendEmail(
             email,
             "Welcome to Beauté Salon",
@@ -186,8 +182,7 @@ const createStylistUser = async (req, res) => {
 
         await newStylist.save();
 
-        // Every stylist also needs a Stylist profile.
-        // The stylist fills in services and schedule after logging in.
+
         await Stylist.create({
             user: newStylist._id,
             specialization: specialization || "Stylist",
@@ -196,7 +191,7 @@ const createStylistUser = async (req, res) => {
             photo
         });
 
-        // No "await": the response should not wait for the email
+
         sendEmail(
             email,
             "Your Beauté Salon stylist account",
@@ -219,7 +214,6 @@ const createStylistUser = async (req, res) => {
 };
 
 
-// Logged-in user reads their own details (membership, loyalty points)
 const getMe = async (req, res) => {
 
     try {
