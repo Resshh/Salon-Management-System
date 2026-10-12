@@ -1,9 +1,3 @@
-// Grey "placeholder" cards shown while a page is waiting for its data.
-// The moving shine on them comes from the CSS class "skeleton-line" in App.css.
-//
-//   count     = how many placeholder cards to show
-//   className = spacing above the cards (pass "" for none)
-
 function SkeletonCards({ count = 3, className = "mt-8" }) {
 
     return (
