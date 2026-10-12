@@ -1,17 +1,5 @@
 import Modal from "./Modal";
 
-// A yes / no question. Replaces the browser confirm().
-//
-// How to use it in a component:
-//   const [confirmBox, setConfirmBox] = useState(null);
-//
-//   setConfirmBox({
-//       text: "Delete this service?",
-//       onYes: () => deleteService(id)
-//   });
-//
-//   <ConfirmBox confirmBox={confirmBox} onClose={() => setConfirmBox(null)} />
-
 function ConfirmBox({ confirmBox, onClose }) {
 
     if (!confirmBox) {
@@ -20,7 +8,6 @@ function ConfirmBox({ confirmBox, onClose }) {
 
     const clickYes = () => {
 
-        // Close the box first, then run the action
         onClose();
         confirmBox.onYes();
 
